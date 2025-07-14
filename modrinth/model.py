@@ -1,15 +1,25 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal
+from typing import Literal, TypeVar, cast
 
 from modrinth.types import (
+    Empty,
+    EMPTY,
+    FILE_TYPE,
     GAME_VERSION,
+    HASH,
+    HASH_ALGORITHM,
     LOADER,
     MODRINTH_ID,
     MODRINTH_TEMP_ID,
+    REQUESTED_PROJECT_STATUS,
+    REQUESTED_VERSION_STATUS,
     SHA1_HASH,
     SHA512_HASH,
+    SUPPORT,
     SVG,
+    VERSION_STATUS,
+    VERSION_TYPE,
 )
 
 DATE_FORMAT = "%YYYY-%MM-%DD"
@@ -136,7 +146,7 @@ class VersionFile:
     filename: str
     primary: bool
     size: int
-    file_type: Literal[None, "required-resource-pack", "optional-resource-pack"]
+    file_type: FILE_TYPE | None
 
     @classmethod
     def from_json(cls, json_: dict) -> "VersionFile":
@@ -180,11 +190,11 @@ class Version:
     changelog: str | None
     dependencies: list[VersionDependency]
     game_versions: list[GAME_VERSION]
-    version_type: Literal["release", "beta", "alpha"]
+    version_type: VERSION_TYPE
     loaders: list[str]
     featured: bool
-    status: Literal["listed", "archived", "draft", "unlisted", "scheduled", "unknown"]
-    requested_status: Literal["listed", "archived", "draft", "unlisted"]
+    status: VERSION_STATUS
+    requested_status: REQUESTED_VERSION_STATUS | None
     id: MODRINTH_ID
     project_id: MODRINTH_ID
     author_id: MODRINTH_ID
@@ -213,7 +223,7 @@ class Version:
             loaders=json_["loaders"],
             featured=json_["featured"],
             status=json_["status"],
-            requested_status=json_["requested_status"],
+            requested_status=json_.get("requested_status"),
             id=json_["id"],
             project_id=json_["project_id"],
             author_id=json_["author_id"],
@@ -246,6 +256,307 @@ class Version:
             "changelog_url": self.changelog_url,
             "files": [f.to_json() for f in self.files],
         }
+
+
+@dataclass
+class VersionDependencyCreate:
+    """
+    A specific version of a project that this version depends on.
+
+    Mostly used when creating a new version.
+
+    Documentation: https://docs.modrinth.com/api/operations/createversion/
+    See Array/dependencies
+    """
+
+    version_id: MODRINTH_ID | None | Empty
+    project_id: MODRINTH_ID | None | Empty
+    file_name: str | None | Empty
+    dependency_type: Literal["required", "optional", "incompatible", "embedded"]
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "VersionDependencyCreate":
+        """
+        Convert a dictionary representation of a JSON `VersionDependencyCreate` object into a Python object.
+
+        :param json_: The dictionary containing the same keys expected by `VersionDependencyCreate`
+        :raise KeyError: If `json_["dependency_type"]` is not defined.
+        """
+        return VersionDependencyCreate(
+            version_id=json_.get("version_id", Empty),
+            project_id=json_.get("project_id", Empty),
+            file_name=json_.get("file_name", Empty),
+            dependency_type=json_["dependency_type"],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON VersionDependencyCreate object.
+        """
+        output: dict = {
+            "dependency_type": self.dependency_type,
+        }
+
+        if not isinstance(self.version_id, Empty):
+            output["version_id"] = self.version_id
+        if not isinstance(self.project_id, Empty):
+            output["project_id"] = self.project_id
+        if not isinstance(self.file_name, Empty):
+            output["file_name"] = self.file_name
+
+        return output
+
+
+@dataclass
+class VersionCreate:
+    """
+    All data associated with a specific version of a project.
+
+    Documentation: https://docs.modrinth.com/api/operations/getprojectversions/#responses
+    """
+
+    name: str | Empty
+    version_number: VersionNumber | Empty
+    changelog: str | None | Empty
+    dependencies: list[VersionDependencyCreate] | Empty
+    game_versions: list[GAME_VERSION] | Empty
+    version_type: VERSION_TYPE | Empty
+    loaders: list[str] | Empty
+    featured: bool | Empty
+    status: VERSION_STATUS | Empty
+    requested_status: REQUESTED_VERSION_STATUS | None | Empty
+    project_id: MODRINTH_ID
+    file_parts: list[str]
+    primary_file: str | Empty
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "VersionCreate":
+        """
+        :param json_: The dictionary containing the same keys expected by `VersionCreate`
+        :raise KeyError: If any required values for `VersionCreate` are not defined.
+        """
+        version_number: VersionNumber | Empty = EMPTY
+        if x := json_.get("version_number", EMPTY) != EMPTY:
+            version_number = VersionNumber.from_version_number_str(x)
+        dependencies: list[VersionDependencyCreate] | Empty = EMPTY
+        if x := json_.get("dependencies", EMPTY) != EMPTY:
+            dependencies = [VersionDependencyCreate.from_json(d) for d in x]
+
+        return VersionCreate(
+            name=json_.get("name", EMPTY),
+            version_number=version_number,
+            changelog=json_.get("changelog", EMPTY),
+            dependencies=dependencies,
+            game_versions=json_.get("game_versions", EMPTY),
+            version_type=json_.get("version_type", EMPTY),
+            loaders=json_.get("loaders", EMPTY),
+            featured=json_.get("featured", EMPTY),
+            status=json_.get("status", EMPTY),
+            requested_status=json_.get("requested_status", EMPTY),
+            project_id=json_["project_id"],
+            file_parts=json_["file_parts"],
+            primary_file=json_.get("primary_file", EMPTY),
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `VersionCreate` object.
+        """
+
+        output: dict = {
+            "project_id": self.project_id,
+            "file_parts": self.file_parts,
+        }
+
+        if not isinstance(self.name, Empty):
+            output["name"] = self.name
+        if not isinstance(self.version_number, Empty):
+            output["version_number"] = str(self.version_number)
+        if not isinstance(self.changelog, Empty):
+            output["changelog"] = self.changelog
+        if not isinstance(self.dependencies, Empty):
+            output["dependencies"] = [d.to_json() for d in self.dependencies]
+        if not isinstance(self.game_versions, Empty):
+            output["game_versions"] = self.game_versions
+        if not isinstance(self.version_type, Empty):
+            output["version_type"] = self.version_type
+        if not isinstance(self.loaders, Empty):
+            output["loaders"] = self.loaders
+        if not isinstance(self.featured, Empty):
+            output["featured"] = self.featured
+        if not isinstance(self.status, Empty):
+            output["status"] = self.status
+        if not isinstance(self.requested_status, Empty):
+            output["requested_status"] = self.requested_status
+        if not isinstance(self.primary_file, Empty):
+            output["primary_file"] = self.primary_file
+
+        return output
+
+
+@dataclass
+class SingleHashMapping:
+    """
+    A pairing of a file hash with the algorithm used.
+
+    This is primary used when modifying a version.
+
+    https://docs.modrinth.com/api/operations/modifyversion/#request
+    See primary_file
+    """
+
+    algorithm: HASH_ALGORITHM
+    hash: HASH
+
+    @classmethod
+    def from_json(cls, json_: list[str]) -> "SingleHashMapping":
+        """
+        :param json_: The list containing the same values expected by `SingleHashMapping`
+        :raise KeyError: If any required values for `SingleHashMapping` are not defined.
+        """
+        return SingleHashMapping(
+            algorithm=cast(HASH_ALGORITHM, json_[0]),
+            hash=json_[1],
+        )
+
+    def to_json(self) -> list[str]:
+        """
+        Convert back into a dictionary representation of a JSON `SingleHashMapping` object.
+        """
+        return [
+            self.algorithm,
+            self.hash,
+        ]
+
+
+@dataclass
+class FileType:
+    """
+    Data representing a file to be edited.
+
+    Primarily used when modifying a version.
+
+    Documentation: https://docs.modrinth.com/api/operations/modifyversion/#responses
+    See fil_types
+    """
+
+    algorithm: HASH_ALGORITHM
+    hash: HASH
+    file_type: FILE_TYPE | None
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "FileType":
+        """
+        :param json_: The dictionary containing the same keys expected by `FileType`
+        :raise KeyError: If any required values for `FileType` are not defined.
+        """
+        return FileType(
+            algorithm=json_["algorithm"],
+            hash=json_["hash"],
+            file_type=json_["file_type"],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `FileType` object.
+        """
+        return {
+            "algorithm": self.algorithm,
+            "hash": self.hash,
+            "file_type": self.file_type,
+        }
+
+
+@dataclass
+class VersionPatch:
+    """
+    All data necessary for updating a specific version of a project.
+
+    Documentation: https://docs.modrinth.com/api/operations/modifyversion/#responses
+    """
+
+    name: str | Empty
+    version_number: VersionNumber | Empty
+    changelog: str | None | Empty
+    dependencies: list[VersionDependency] | Empty
+    game_versions: list[GAME_VERSION] | Empty
+    version_type: VERSION_TYPE | Empty
+    loaders: list[str] | Empty
+    featured: bool | Empty
+    status: VERSION_STATUS | Empty
+    requested_status: REQUESTED_VERSION_STATUS | Empty
+    primary_file: SingleHashMapping | Empty
+    file_types: list[FileType] | Empty
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "VersionPatch":
+        """
+        :param json_: The dictionary containing the same keys expected by `VersionPatch`
+        :raise KeyError: If any required values for `VersionPatch` are not defined.
+        """
+        version_number: VersionNumber | Empty = EMPTY
+        if x := json_.get("version_number", EMPTY) != EMPTY:
+            version_number = VersionNumber.from_version_number_str(x)
+
+        dependencies: list[VersionDependency] | Empty = EMPTY
+        if x := json_.get("dependencies", EMPTY) != EMPTY:
+            dependencies = [VersionDependency.from_json(vd) for vd in x]
+
+        primary_file: SingleHashMapping | Empty = EMPTY
+        if x := json_.get("primary_file", EMPTY) != EMPTY:
+            primary_file = SingleHashMapping.from_json(x)
+
+        file_types: list[FileType] | Empty = EMPTY
+        if x := json_.get("file_types", EMPTY) != EMPTY:
+            file_types = [FileType.from_json(f) for f in x]
+
+        return VersionPatch(
+            name=json_.get("name", EMPTY),
+            version_number=version_number,
+            changelog=json_.get("changelog"),
+            dependencies=dependencies,
+            game_versions=json_.get("game_versions", EMPTY),
+            version_type=json_.get("version_type", EMPTY),
+            loaders=json_.get("loaders", EMPTY),
+            featured=json_.get("featured", EMPTY),
+            status=json_.get("status", EMPTY),
+            requested_status=json_.get("requested_status", EMPTY),
+            primary_file=primary_file,
+            file_types=file_types,
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `VersionPatch` object.
+        """
+        output: dict = {}
+
+        if not isinstance(self.name, Empty):
+            output["name"] = self.name
+        if not isinstance(self.version_number, Empty):
+            output["version_number"] = str(self.version_number)
+        if not isinstance(self.changelog, Empty):
+            output["changelog"] = self.changelog
+        if not isinstance(self.dependencies, Empty):
+            output["dependencies"] = [d.to_json() for d in self.dependencies]
+        if not isinstance(self.game_versions, Empty):
+            output["game_versions"] = self.game_versions
+        if not isinstance(self.version_type, Empty):
+            output["version_type"] = self.version_type
+        if not isinstance(self.loaders, Empty):
+            output["loaders"] = self.loaders
+        if not isinstance(self.featured, Empty):
+            output["featured"] = self.featured
+        if not isinstance(self.status, Empty):
+            output["status"] = self.status
+        if not isinstance(self.requested_status, Empty):
+            output["requested_status"] = self.requested_status
+        if not isinstance(self.primary_file, Empty):
+            output["primary_file"] = self.primary_file.to_json()
+        if not isinstance(self.file_types, Empty):
+            output["file_types"] = [f.to_json() for f in self.file_types]
+
+        return output
 
 
 @dataclass
@@ -287,6 +598,46 @@ class Payout:
             "payout_wallet_type": self.payout_wallet_type,
             "payout_address": self.payout_address,
         }
+
+
+@dataclass
+class PayoutPatch:
+    """
+    Data related to a user's payout status when updating that data.
+
+    Documentation: https://docs.modrinth.com/api/operations/modifyuser/#request-body
+    See payout_data
+    """
+
+    payout_wallet: Literal["paypal", "venmo"] | Empty
+    payout_wallet_type: Literal["email", "phone", "user_handle"] | Empty
+    payout_address: str | Empty
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "PayoutPatch":
+        """
+        :param json_: The dictionary containing the same keys expected by `PayoutPatch`
+        """
+        return PayoutPatch(
+            payout_wallet=json_.get("payout_wallet", EMPTY),
+            payout_wallet_type=json_.get("payout_wallet_type", EMPTY),
+            payout_address=json_.get("payout_address", EMPTY),
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `PayoutPatch` object.
+        """
+        output: dict = {}
+
+        if not isinstance(self.payout_wallet, Empty):
+            output["payout_wallet"] = self.payout_wallet
+        if not isinstance(self.payout_wallet_type, Empty):
+            output["payout_wallet_type"] = self.payout_wallet_type
+        if not isinstance(self.payout_address, Empty):
+            output["payout_address"] = self.payout_address
+
+        return output
 
 
 @dataclass
@@ -349,6 +700,7 @@ class User:
     If the user is authenticated and gets their own data,
     some nullable fields will have values.
     This includes: `email`, `payout_data`, `auth_providers`, `email_verified`, `has_password`, and `has_totp`.
+    They are accessed using a different API endpoint.
 
     Documentation: https://docs.modrinth.com/api/operations/getuser/#responses
     """
@@ -418,6 +770,160 @@ class User:
             "has_totp": self.has_totp,
             "github_id": self.github_id,
         }
+
+
+@dataclass
+class PersonalUser:
+    """
+    The data associated with this user.
+
+    This is different from `User` because some previous null fields will have values.
+    This includes: `email`, `payout_data`, `auth_providers`, `email_verified`, `has_password`, and `has_totp`.
+
+    Documentation: https://docs.modrinth.com/api/operations/getuserfromauth/
+    """
+
+    username: str
+    name: str | None
+    email: str | None
+    bio: str
+    payout_date: Payout | None
+    id: str
+    avatar_url: str
+    created: datetime
+    role: Literal["admin", "moderator", "developer"]
+    badges: Badges
+    auth_providers: list[str]
+    email_verified: bool
+    has_password: bool
+    has_totp: bool
+    github_id: None
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "PersonalUser":
+        """
+        :param json_: The dictionary containing the same keys expected by `PersonalUser`
+        :raise KeyError: If any required values for `PersonalUser` are not defined.
+        """
+        payout_date_json: dict | None = json_.get("payout_date")
+
+        return PersonalUser(
+            username=json_["username"],
+            name=json_.get("name"),
+            email=json_.get("email"),
+            bio=json_["bio"],
+            payout_date=(
+                None if payout_date_json is None else Payout.from_json(payout_date_json)
+            ),
+            id=json_["id"],
+            avatar_url=json_["avatar_url"],
+            created=datetime.fromisoformat(json_["created"]),
+            role=json_["role"],
+            badges=Badges.from_bitfield(json_["badges"]),
+            auth_providers=json_["auth_providers"],
+            email_verified=json_["email_verified"],
+            has_password=json_["has_password"],
+            has_totp=json_["has_totp"],
+            github_id=json_.get("github_id"),
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `PersonalUser` object.
+        """
+        return {
+            "username": self.username,
+            "name": self.name,
+            "email": self.email,
+            "bio": self.bio,
+            "payout_date": self.payout_date,
+            "id": self.id,
+            "avatar_url": self.avatar_url,
+            "created": self.created.strftime(DATE_FORMAT),
+            "role": self.role,
+            "badges": self.badges.to_bitfield(),
+            "auth_providers": self.auth_providers,
+            "email_verified": self.email_verified,
+            "has_password": self.has_password,
+            "has_totp": self.has_totp,
+            "github_id": self.github_id,
+        }
+
+    def to_user(self) -> User:
+        return User(
+            username=self.username,
+            name=self.name,
+            email=self.email,
+            bio=self.bio,
+            payout_date=self.payout_date,
+            id=self.id,
+            avatar_url=self.avatar_url,
+            created=self.created,
+            role=self.role,
+            badges=self.badges,
+            auth_providers=self.auth_providers,
+            email_verified=self.email_verified,
+            has_password=self.has_password,
+            has_totp=self.has_totp,
+            github_id=self.github_id,
+        )
+
+
+# TODO: Add notes about EMPTY and None to other objects
+@dataclass
+class UserPatch:
+    """
+    The user data that can be edited via a patch request.
+
+    Fields marked as `EMPTY` are not included in the request.
+    Fields marked as `None` are marked as `null` in the request.
+
+    Documentation: https://docs.modrinth.com/api/operations/modifyuser/#request-body
+    """
+
+    username: str | Empty
+    name: str | None | Empty
+    email: str | None | Empty
+    bio: str | None | Empty
+    payout_date: PayoutPatch | Empty
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "UserPatch":
+        """
+        :param json_: The dictionary containing the same keys expected by `UserPatch`
+        """
+        payout_date_json: dict | Empty = json_.get("payout_date", EMPTY)
+
+        return UserPatch(
+            username=json_.get("username", EMPTY),
+            name=json_.get("name", EMPTY),
+            email=json_.get("email", EMPTY),
+            bio=json_.get("bio", EMPTY),
+            payout_date=(
+                payout_date_json
+                if isinstance(payout_date_json, Empty)
+                else PayoutPatch.from_json(payout_date_json)
+            ),
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `UserPatch` object.
+        """
+        output: dict = {}
+
+        if not isinstance(self.username, Empty):
+            output["username"] = self.username
+        if not isinstance(self.name, Empty):
+            output["name"] = self.name
+        if not isinstance(self.email, Empty):
+            output["email"] = self.email
+        if not isinstance(self.bio, Empty):
+            output["bio"] = self.bio
+        if not isinstance(self.payout_date, Empty):
+            output["payout_date"] = self.payout_date
+
+        return output
 
 
 @dataclass
@@ -616,8 +1122,8 @@ class Project:
     title: str
     description: str
     categories: list[str]
-    client_side: Literal["required", "optional", "unsupported", "unknown"]
-    server_side: Literal["required", "optional", "unsupported", "unknown"]
+    client_side: SUPPORT
+    server_side: SUPPORT
     body: str
     status: Literal[
         "approved",
@@ -631,9 +1137,7 @@ class Project:
         "private",
         "unknown",
     ]
-    requested_status: Literal[
-        None, "approved", "archived", "unlisted", "private", "draft"
-    ]
+    requested_status: REQUESTED_PROJECT_STATUS | None
     additional_categories: list[str]
     issues_url: str | None
     source_url: str | None
@@ -756,6 +1260,466 @@ class Project:
             "loaders": self.loaders,
             "gallery": [g.to_json() for g in self.gallery],
         }
+
+
+@dataclass
+class ProjectCreate:
+    """
+    A modrinth project.
+
+    Documentation: https://docs.modrinth.com/api/operations/getproject/#responses
+    """
+
+    slug: MODRINTH_TEMP_ID | Empty
+    title: str | Empty
+    description: str | Empty
+    categories: list[str] | Empty
+    client_side: SUPPORT | Empty
+    server_side: SUPPORT | Empty
+    body: str | Empty
+    status: (
+        Literal[
+            "approved",
+            "archived",
+            "rejected",
+            "draft",
+            "unlisted",
+            "processing",
+            "withheld",
+            "scheduled",
+            "private",
+            "unknown",
+        ]
+        | Empty
+    )
+    requested_status: REQUESTED_PROJECT_STATUS | None | Empty
+    additional_categories: list[str] | Empty
+    issues_url: str | None | Empty
+    source_url: str | None | Empty
+    wiki_url: str | None | Empty
+    discord_url: str | None | Empty
+    donation_urls: list[DonationLink] | Empty
+    license_id: str | Empty
+    license_url: str | None | Empty
+    project_type: Literal["mod", "modpack"]  # TODO: This seems incorrect
+    initial_versions: Empty
+    is_draft: Literal[True]
+    gallery_items: Empty
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "ProjectCreate":
+        """
+        :param json_: The dictionary containing the same keys expected by `ProjectCreate`
+        :raise KeyError: If any required values for `ProjectCreate` are not defined.
+        """
+        donation_urls: list[DonationLink] | Empty = EMPTY
+        if x := json_.get("donation_urls", EMPTY) != EMPTY:
+            [DonationLink.from_json(d) for d in x]
+
+        return ProjectCreate(
+            slug=json_.get("slug", EMPTY),
+            title=json_.get("title", EMPTY),
+            description=json_.get("description", EMPTY),
+            categories=json_.get("categories", EMPTY),
+            client_side=json_.get("client_side", EMPTY),
+            server_side=json_.get("server_side", EMPTY),
+            body=json_.get("body", EMPTY),
+            status=json_.get("status", EMPTY),
+            requested_status=json_.get("requested_status"),
+            additional_categories=json_.get("additional_categories", EMPTY),
+            issues_url=json_.get("issues_url"),
+            source_url=json_.get("source_url"),
+            wiki_url=json_.get("wiki_url"),
+            discord_url=json_.get("discord_url"),
+            donation_urls=donation_urls,
+            license_id=json_.get("license_id", EMPTY),
+            license_url=json_.get("license_url", EMPTY),
+            project_type=json_["project_type"],
+            initial_versions=EMPTY,
+            is_draft=True,
+            gallery_items=EMPTY,
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `ProjectCreate` object.
+        """
+        output: dict = {
+            "project_type": self.project_type,
+        }
+
+        if not isinstance(self.slug, Empty):
+            output["slug"] = self.slug
+        if not isinstance(self.title, Empty):
+            output["title"] = self.title
+        if not isinstance(self.description, Empty):
+            output["description"] = self.description
+        if not isinstance(self.categories, Empty):
+            output["categories"] = self.categories
+        if not isinstance(self.client_side, Empty):
+            output["client_side"] = self.client_side
+        if not isinstance(self.server_side, Empty):
+            output["server_side"] = self.server_side
+        if not isinstance(self.body, Empty):
+            output["body"] = self.body
+        if not isinstance(self.status, Empty):
+            output["status"] = self.status
+        if not isinstance(self.requested_status, Empty):
+            output["requested_status"] = self.requested_status
+        if not isinstance(self.additional_categories, Empty):
+            output["additional_categories"] = self.additional_categories
+        if not isinstance(self.issues_url, Empty):
+            output["issues_url"] = self.issues_url
+        if not isinstance(self.source_url, Empty):
+            output["source_url"] = self.source_url
+        if not isinstance(self.wiki_url, Empty):
+            output["wiki_url"] = self.wiki_url
+        if not isinstance(self.discord_url, Empty):
+            output["discord_url"] = self.discord_url
+        if not isinstance(self.donation_urls, Empty):
+            output["donation_urls"] = [d.to_json() for d in self.donation_urls]
+        if not isinstance(self.license_id, Empty):
+            output["license_id"] = self.license_id
+        if not isinstance(self.license_url, Empty):
+            output["license_url"] = self.license_url
+        if not isinstance(self.initial_versions, Empty):
+            output["initial_versions"] = self.initial_versions
+        if not isinstance(self.is_draft, Empty):
+            output["is_draft"] = self.is_draft
+        if not isinstance(self.gallery_items, Empty):
+            output["gallery_items"] = self.gallery_items
+
+        return output
+
+
+@dataclass
+class ProjectPatch:
+    """
+    Data to update a Modrinth project.
+
+    Documentation: https://docs.modrinth.com/api/operations/modifyproject/#request-body
+    """
+
+    slug: MODRINTH_TEMP_ID | Empty
+    title: str | Empty
+    description: str | Empty
+    categories: list[str] | Empty
+    client_side: SUPPORT | Empty
+    server_side: SUPPORT | Empty
+    body: str | Empty
+    status: (
+        Literal[
+            "approved",
+            "archived",
+            "rejected",
+            "draft",
+            "unlisted",
+            "processing",
+            "withheld",
+            "scheduled",
+            "private",
+            "unknown",
+        ]
+        | Empty
+    )
+    requested_status: (
+        Literal["approved", "archived", "unlisted", "private", "draft"] | None | Empty
+    )
+    additional_categories: list[str] | Empty
+    issues_url: str | None | Empty
+    source_url: str | None | Empty
+    wiki_url: str | None | Empty
+    discord_url: str | None | Empty
+    donation_urls: list[DonationLink] | Empty
+    license_id: str | Empty
+    license_url: str | None | Empty
+    moderation_message: str | None | Empty
+    moderation_message_body: str | None | Empty
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "ProjectPatch":
+        """
+        :param json_: The dictionary containing the same keys expected by `ProjectPatch`
+        :raise KeyError: If any required values for `ProjectPatch` are not defined.
+        """
+
+        return ProjectPatch(
+            slug=json_.get("slug", EMPTY),
+            title=json_.get("title", EMPTY),
+            description=json_.get("description", EMPTY),
+            categories=json_.get("categories", EMPTY),
+            client_side=json_.get("client_side", EMPTY),
+            server_side=json_.get("server_side", EMPTY),
+            body=json_.get("body", EMPTY),
+            status=json_.get("status", EMPTY),
+            requested_status=json_.get("requested_status", EMPTY),
+            additional_categories=json_.get("additional_categories", EMPTY),
+            issues_url=json_.get("issues_url", EMPTY),
+            source_url=json_.get("source_url", EMPTY),
+            wiki_url=json_.get("wiki_url", EMPTY),
+            discord_url=json_.get("discord_url", EMPTY),
+            donation_urls=json_.get("donation_urls", EMPTY),
+            license_id=json_.get("license_id", EMPTY),
+            license_url=json_.get("license_url", EMPTY),
+            moderation_message=json_.get("moderation_message", EMPTY),
+            moderation_message_body=json_.get("moderation_message_body", EMPTY),
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `ProjectPatch` object.
+        """
+        output: dict = {}
+
+        if not isinstance(self.slug, Empty):
+            output["slug"] = self.slug
+        if not isinstance(self.title, Empty):
+            output["title"] = self.title
+        if not isinstance(self.description, Empty):
+            output["description"] = self.description
+        if not isinstance(self.categories, Empty):
+            output["categories"] = self.categories
+        if not isinstance(self.client_side, Empty):
+            output["client_side"] = self.client_side
+        if not isinstance(self.server_side, Empty):
+            output["server_side"] = self.server_side
+        if not isinstance(self.body, Empty):
+            output["body"] = self.body
+        if not isinstance(self.status, Empty):
+            output["status"] = self.status
+        if not isinstance(self.requested_status, Empty):
+            output["requested_status"] = self.requested_status
+        if not isinstance(self.additional_categories, Empty):
+            output["additional_categories"] = self.additional_categories
+        if not isinstance(self.issues_url, Empty):
+            output["issues_url"] = self.issues_url
+        if not isinstance(self.source_url, Empty):
+            output["source_url"] = self.source_url
+        if not isinstance(self.wiki_url, Empty):
+            output["wiki_url"] = self.wiki_url
+        if not isinstance(self.discord_url, Empty):
+            output["discord_url"] = self.discord_url
+        if not isinstance(self.donation_urls, Empty):
+            output["donation_urls"] = self.donation_urls
+        if not isinstance(self.license_id, Empty):
+            output["license_id"] = self.license_id
+        if not isinstance(self.license_url, Empty):
+            output["license_url"] = self.license_url
+        if not isinstance(self.moderation_message, Empty):
+            output["moderation_message"] = self.moderation_message
+        if not isinstance(self.moderation_message_body, Empty):
+            output["moderation_message_body"] = self.moderation_message_body
+
+        return output
+
+
+T = TypeVar("T")
+
+
+class ProjectPatchesAdjustments[T]:
+    """
+    Represents the options for modifying multiple projects at the same time.
+
+    This doesn't exactly match the structure of the JSON,
+    but it does better represent the relationship between data.
+    Specifically, it represents how you can not both set and modify
+    an array of data in the same request.
+
+    Documentation: https://docs.modrinth.com/api/operations/patchprojects/
+    """
+
+    def __init__(self) -> None:
+        """
+        Constructor for the option of neither setting nor adjusting an array.
+        """
+        self.set_items: list[T] | Empty = EMPTY
+        self.add_items: list[T] | Empty = EMPTY
+        self.remove_items: list[T] | Empty = EMPTY
+
+    @classmethod
+    def with_set_items(cls, *, set_items: list[T]) -> "ProjectPatchesAdjustments[T]":
+        """
+        Constructor for the option of setting an array with specific items.
+
+        :param set_items: The new values to set this field to for all specified projects.
+        """
+        out = cls()
+        out.set_items = set_items
+        return out
+
+    @classmethod
+    def with_adjust_items(
+        cls,
+        *,
+        add_items: list[T],
+        remove_items: list[T],
+    ) -> "ProjectPatchesAdjustments[T]":
+        """
+        Constructor for the option of adjusting an array with specific items.
+
+        :param add_items: The values to add to this field to for all specified projects.
+        :param remove_items: The values to remove from this field to for all specified projects.
+        """
+        out = cls()
+        out.add_items = add_items
+        out.remove_items = remove_items
+        return out
+
+
+@dataclass
+class ProjectPatches:
+    """
+    Data to update multiple Modrinth projects.
+
+    Documentation: https://docs.modrinth.com/api/operations/modifyproject/#request-body
+    """
+
+    categories: ProjectPatchesAdjustments[str]
+    additional_categories: ProjectPatchesAdjustments[str]
+    donation_urls: ProjectPatchesAdjustments[DonationLink]
+    issues_url: str | None | Empty
+    source_url: str | None | Empty
+    wiki_url: str | None | Empty
+    discord_url: str | None | Empty
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "ProjectPatches":
+        """
+        :param json_: The dictionary containing the same keys expected by `ProjectPatches`
+        :raise ValueError: If one of categories, additional_categories, or donation_urls is both set and modified.
+        """
+
+        # Do error checking categories
+        categories: ProjectPatchesAdjustments[str]
+        if "categories" in json_ and (
+            "add_categories" in json_ or "remove_categories" in json_
+        ):
+            raise ValueError(
+                "Cannot simultaneously set `categories` and adjust (with `add_categories` or `remove_categories`)"
+            )
+
+        # Do error checking additional_categories
+        additional_categories: ProjectPatchesAdjustments[str]
+        if "additional_categories" in json_ and (
+            "add_additional_categories" in json_
+            or "remove_additional_categories" in json_
+        ):
+            raise ValueError(
+                "Cannot simultaneously set `additional_categories` and adjust (with `add_additional_categories` or `remove_additional_categories`)"
+            )
+
+        # Do error checking donation_urls
+        donation_urls: ProjectPatchesAdjustments[DonationLink]
+        if "donation_urls" in json_ and (
+            "add_donation_urls" in json_ or "remove_donation_urls" in json_
+        ):
+            raise ValueError(
+                "Cannot simultaneously set `donation_urls` and adjust (with `add_donation_urls` or `remove_donation_urls`)"
+            )
+
+        # Setup categories
+        if "categories" in json_:
+            categories = ProjectPatchesAdjustments[str].with_set_items(
+                set_items=json_.get("categories", [])
+            )
+        elif "add_categories" in json_ or "remove_categories" in json_:
+            categories = ProjectPatchesAdjustments[str].with_adjust_items(
+                add_items=json_.get("add_categories", []),
+                remove_items=json_.get("remove_categories", []),
+            )
+        else:
+            categories = ProjectPatchesAdjustments[str]()
+
+        # Setup additional_categories
+        if "additional_categories" in json_:
+            additional_categories = ProjectPatchesAdjustments[str].with_set_items(
+                set_items=json_.get("additional_categories", [])
+            )
+        elif (
+            "add_additional_categories" in json_
+            or "remove_additional_categories" in json_
+        ):
+            additional_categories = ProjectPatchesAdjustments[str].with_adjust_items(
+                add_items=json_.get("add_additional_categories", []),
+                remove_items=json_.get("remove_additional_categories", []),
+            )
+        else:
+            additional_categories = ProjectPatchesAdjustments[str]()
+
+        # Setup donation_urls
+        if "donation_urls" in json_:
+            donation_urls = ProjectPatchesAdjustments[DonationLink].with_set_items(
+                set_items=[
+                    DonationLink.from_json(d) for d in json_.get("donation_urls", [])
+                ]
+            )
+        elif "add_donation_urls" in json_ or "remove_donation_urls" in json_:
+            donation_urls = ProjectPatchesAdjustments[DonationLink].with_adjust_items(
+                add_items=[
+                    DonationLink.from_json(d)
+                    for d in json_.get("add_donation_urls", [])
+                ],
+                remove_items=[
+                    DonationLink.from_json(d)
+                    for d in json_.get("remove_donation_urls", [])
+                ],
+            )
+        else:
+            donation_urls = ProjectPatchesAdjustments[DonationLink]()
+
+        return ProjectPatches(
+            categories=categories,
+            additional_categories=additional_categories,
+            donation_urls=donation_urls,
+            issues_url=json_.get("issues_url", Empty),
+            source_url=json_.get("source_url", Empty),
+            wiki_url=json_.get("wiki_url", Empty),
+            discord_url=json_.get("discord_url", Empty),
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `ProjectPatches` object.
+        """
+        output: dict = {}
+
+        if not isinstance(self.categories.set_items, Empty):
+            output["categories"] = self.categories.set_items
+        if not isinstance(self.categories.add_items, Empty):
+            output["add_categories"] = self.categories.add_items
+        if not isinstance(self.categories.remove_items, Empty):
+            output["remove_categories"] = self.categories.remove_items
+        if not isinstance(self.additional_categories.set_items, Empty):
+            output["additional_categories"] = self.additional_categories.set_items
+        if not isinstance(self.additional_categories.add_items, Empty):
+            output["add_additional_categories"] = self.additional_categories.add_items
+        if not isinstance(self.additional_categories.remove_items, Empty):
+            output["remove_additional_categories"] = (
+                self.additional_categories.remove_items
+            )
+        if not isinstance(self.donation_urls.set_items, Empty):
+            output["donation_urls"] = [
+                d.to_json() for d in self.donation_urls.set_items
+            ]
+        if not isinstance(self.donation_urls.add_items, Empty):
+            output["add_donation_urls"] = [
+                d.to_json() for d in self.donation_urls.add_items
+            ]
+        if not isinstance(self.donation_urls.remove_items, Empty):
+            output["remove_donation_urls"] = [
+                d.to_json() for d in self.donation_urls.remove_items
+            ]
+
+        if not isinstance(self.issues_url, Empty):
+            output["issues_url"] = self.issues_url
+        if not isinstance(self.source_url, Empty):
+            output["source_url"] = self.source_url
+        if not isinstance(self.wiki_url, Empty):
+            output["wiki_url"] = self.wiki_url
+        if not isinstance(self.discord_url, Empty):
+            output["discord_url"] = self.discord_url
+
+        return output
 
 
 @dataclass
@@ -1149,10 +2113,10 @@ class ModrinthStatistics:
         :raise KeyError: If any required values for `ModrinthStatistics` are not defined.
         """
         return ModrinthStatistics(
-            projects=json_['projects'],
-            versions=json_['versions'],
-            files=json_['files'],
-            authors=json_['authors'],
+            projects=json_["projects"],
+            versions=json_["versions"],
+            files=json_["files"],
+            authors=json_["authors"],
         )
 
     def to_json(self) -> dict:
@@ -1160,8 +2124,79 @@ class ModrinthStatistics:
         Convert back into a dictionary representation of a JSON `ModrinthStatistics` object.
         """
         return {
-            'projects': self.projects,
-            'versions': self.versions,
-            'files': self.files,
-            'authors': self.authors,
+            "projects": self.projects,
+            "versions": self.versions,
+            "files": self.files,
+            "authors": self.authors,
+        }
+
+
+@dataclass
+class PayoutEvent:
+    """
+    Information about a user's previous payout.
+
+    Documentation: https://docs.modrinth.com/api/operations/getpayouthistory/
+    See payouts
+    """
+
+    created: datetime
+    amount: int
+    status: str
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "PayoutEvent":
+        """
+        :param json_: The dictionary containing the same keys expected by `PayoutEvent`
+        :raise KeyError: If any required values for `PayoutEvent` are not defined.
+        """
+        return PayoutEvent(
+            created=datetime.fromisoformat(json_["created"]),
+            amount=json_["amount"],
+            status=json_["status"],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `PayoutEvent` object.
+        """
+        return {
+            "created": self.created.strftime(DATE_FORMAT),
+            "amount": self.amount,
+            "status": self.status,
+        }
+
+
+@dataclass
+class PayoutHistory:
+    """
+    Information about a user's previous payouts.
+
+    Documentation: https://docs.modrinth.com/api/operations/getpayouthistory/
+    """
+
+    all_time: str
+    last_month: str
+    payouts: list[PayoutEvent]
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "PayoutHistory":
+        """
+        :param json_: The dictionary containing the same keys expected by `PayoutHistory`
+        :raise KeyError: If any required values for `PayoutHistory` are not defined.
+        """
+        return PayoutHistory(
+            all_time=json_["all_time"],
+            last_month=json_["last_month"],
+            payouts=[PayoutEvent.from_json(p) for p in json_["payouts"]],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `PayoutHistory` object.
+        """
+        return {
+            "all_time": self.all_time,
+            "last_month": self.last_month,
+            "payouts": [p.to_json() for p in self.payouts],
         }

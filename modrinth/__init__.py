@@ -1,12 +1,15 @@
 import json
-from typing import Any, Iterable, Literal
+from datetime import datetime
+from typing import Any, Iterable, Literal, Protocol
 from warnings import deprecated
 
 import requests
+from requests_toolbelt import MultipartEncoder
 
-from modrinth.types import GAME_VERSION, HASH, LOADER, MODRINTH_ID, MODRINTH_TEMP_ID
+from modrinth.constants import API_V2_PRODUCTION
 from modrinth.model import (
     Category,
+    DATE_FORMAT,
     DeprecatedLicense,
     DonationPlatform,
     ForgeUpdates,
@@ -14,26 +17,79 @@ from modrinth.model import (
     License,
     Loader,
     ModrinthStatistics,
+    PayoutHistory,
     Project,
+    ProjectCreate,
+    ProjectPatch,
+    ProjectPatches,
     ProjectDependencies,
+    PersonalUser,
     TeamMember,
     User,
+    UserPatch,
     Version,
+    VersionCreate,
     VersionNumber,
+    VersionPatch,
+)
+from modrinth.types import (
+    GAME_VERSION,
+    HASH,
+    HASH_ALGORITHM,
+    IMAGE,
+    IMAGE_FILE_EXTENSION,
+    LOADER,
+    MODRINTH_ID,
+    MODRINTH_TEMP_ID,
+    REQUESTED_PROJECT_STATUS,
 )
 
-class ModrinthApi:
-    """
-    Used to make requests to Modrinth's API.
 
-    This is a very incomplete definition of v2 of Modrinth's API.
+class Auth(Protocol):
+    def get_auth_token(self) -> str:
+        """
+        Returns what should be the value of the Authorization header.
+
+        This may require a decent amount of work and throw errors.
+        This will be updated later when OAuth2 support is implemented.
+        """
+        ...
+
+
+class PersonalAccessTokenAuth(Auth):
+    def __init__(self, personal_access_token: str):
+        super().__init__()
+        self.personal_access_token = personal_access_token
+
+    def get_auth_token(self) -> str:
+        return self.personal_access_token
+
+
+class OAuth2Auth(Auth):
+    """
+    A placeholder for if OAuth2 authentication is added.
+    """
+
+    def get_auth_token(self) -> str:
+        raise NotImplementedError(
+            "Support for OAuth2 is not yet implemented in this library"
+        )
+
+
+class ModrinthApi2:
+    """
+    Used to make requests to Modrinth's API which do not require authentication.
+
+    Authentication can still be provided, in which case it will be used.
     """
 
     def __init__(
         self,
         *,
         user_agent: str,
-        api_url: str = "https://api.modrinth.com/v2",
+        authentication: Auth | None = None,
+        api_url: str = API_V2_PRODUCTION,
+        always_use_auth: bool = False,
     ):
         """
         :param user_agent: The owner of the app making the API requests. See https://docs.modrinth.com/api/#user-agents
@@ -41,9 +97,20 @@ class ModrinthApi:
         """
         self.api_url = api_url
         self.user_agent = user_agent
+        self.authorization = authentication
+        self.always_use_auth = always_use_auth
 
     def __repr__(self) -> str:
-        return f"ModrinthApi(api_url='{self.api_url}', user_agent='{self.user_agent}')"
+        return f"ModrinthApi2(user_agent='{self.user_agent}', authentication='{self.authorization},api_url='{self.api_url}')"
+
+    def _get_headers(self) -> dict[str, str]:
+        headers = {"User-Agent": self.user_agent}
+        if self.always_use_auth and self.authorization is not None:
+            headers["Authorization"] = self.authorization.get_auth_token()
+
+        return headers
+
+    __get_headers = _get_headers
 
     def get_project(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> Project:
         """
@@ -56,10 +123,9 @@ class ModrinthApi:
         :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
         :raises KeyError: If the response body is missing a required field.
         """
-
         response = requests.get(
             f"{self.api_url}/project/{project_id}",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -81,7 +147,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/projects",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params={"ids": json.dumps(tuple(project_ids))},
         )
         response.raise_for_status()
@@ -102,16 +168,20 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/projects_random",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params={"count": count},
         )
         response.raise_for_status()
 
         return [Project.from_json(p) for p in response.json()]
 
+    # TODO: check if using auth does anything for this function
     def is_project_id_valid(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> bool:
         """
         Check if the project id or slug (temporary/friendly id) is valid and accessible.
+
+        If the project exists but is inaccessible to the current user,
+        this will still return `False`.
 
         Documentation: https://docs.modrinth.com/api/operations/randomprojects/
 
@@ -123,7 +193,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/project/{project_id}/check",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
 
         if response.status_code == 404:
@@ -153,7 +223,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/project/{project_id}",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -180,7 +250,6 @@ class ModrinthApi:
         :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
         :raises KeyError: If the response body is missing a required field.
         """
-
         filters: dict[str, Any] = dict()
 
         if loaders is not None:
@@ -192,7 +261,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/project/{project_id}/version",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params=filters,
         )
         response.raise_for_status()
@@ -213,7 +282,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/version/{version_id}",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -236,7 +305,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/project/{project_id}/version/{version_id}",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -262,7 +331,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/project/{project_id}/version/{str(version_number)}",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -282,7 +351,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/versions",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params={"ids": json.dumps(tuple(version_ids))},
         )
         response.raise_for_status()
@@ -292,7 +361,7 @@ class ModrinthApi:
     def get_version_from_hash(
         self,
         file_hash: HASH,
-        algorithm: Literal[None, "auto", "sha1", "sha512"] = "auto",
+        algorithm: HASH_ALGORITHM | Literal["auto"] | None = "auto",
     ) -> Version:
         """
         Gets a version from a hash of its file.
@@ -324,7 +393,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/version_file/{file_hash}",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params=query_parameters,
         )
         response.raise_for_status()
@@ -334,7 +403,7 @@ class ModrinthApi:
     def get_versions_from_hash(
         self,
         file_hash: HASH,
-        algorithm: Literal[None, "auto", "sha1", "sha512"] = "auto",
+        algorithm: HASH_ALGORITHM | Literal["auto"] | None = "auto",
     ) -> list[Version]:
         """
         Gets all versions matching a hash of a file.
@@ -364,7 +433,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/version_file/{file_hash}",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params=query_parameters,
         )
         response.raise_for_status()
@@ -376,7 +445,7 @@ class ModrinthApi:
         loaders: Iterable[LOADER],
         game_versions: Iterable[GAME_VERSION],
         file_hash: HASH,
-        algorithm: Literal[None, "auto", "sha1", "sha512"] = "auto",
+        algorithm: HASH_ALGORITHM | Literal["auto"] = "auto",
     ) -> Version:
         """
         Gets the latest version of a project from a file hash.
@@ -400,7 +469,7 @@ class ModrinthApi:
         """
 
         if algorithm == "auto":
-            algorithm = "sha512" if len(file_hash) == 128 else None
+            algorithm = "sha512" if len(file_hash) == 128 else "sha1"
 
         query_parameters: dict[str, Any] = {
             "loaders": json.dumps(tuple(loaders)),
@@ -411,7 +480,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/version_file/{file_hash}/update",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params=query_parameters,
         )
         response.raise_for_status()
@@ -421,7 +490,7 @@ class ModrinthApi:
     def get_versions_from_hashes(
         self,
         file_hashes: Iterable[HASH],
-        algorithm: Literal["sha1", "sha512"],
+        algorithm: HASH_ALGORITHM,
     ) -> dict[HASH, Version]:
         """
         Gets all versions matching the file hashes.
@@ -440,8 +509,11 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/version_files",
-            headers={"User-Agent": self.user_agent},
-            params={"hashes": json.dumps(tuple(file_hashes)), "algorithm": algorithm},
+            headers=self.__get_headers(),
+            params={
+                "hashes": json.dumps(tuple(file_hashes)),
+                "algorithm": algorithm,
+            },
         )
         response.raise_for_status()
 
@@ -452,7 +524,7 @@ class ModrinthApi:
         loaders: Iterable[LOADER],
         game_versions: Iterable[GAME_VERSION],
         file_hashes: Iterable[HASH],
-        algorithm: Literal["sha1", "sha512"],
+        algorithm: HASH_ALGORITHM,
     ) -> dict[HASH, Version]:
         """
         Gets the latest versions of each project based on the file hash.
@@ -473,11 +545,12 @@ class ModrinthApi:
             "loaders": json.dumps(tuple(loaders)),
             "game_versions": json.dumps(tuple(game_versions)),
             "hashes": json.dumps(tuple(file_hashes)),
+            "algorithm": algorithm,
         }
 
         response = requests.get(
             f"{self.api_url}/version_files/update",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params=query_parameters,
         )
         response.raise_for_status()
@@ -490,7 +563,7 @@ class ModrinthApi:
 
         Documentation: https://docs.modrinth.com/api/operations/getuser/
 
-        :param version_id: The ID or slug of the user.
+        :param user_id: The ID or slug of the user.
         :raises HTTPError: If the HTTP request to the Modrinth API fails.
         :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
         :raises KeyError: If the response body is missing a required field.
@@ -498,7 +571,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/user/{user_id}",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -520,7 +593,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/users",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params={"ids": json.dumps(tuple(user_ids))},
         )
         response.raise_for_status()
@@ -543,7 +616,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/user/{user_id}/projects",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -565,7 +638,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/project/{project_id}/members",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -588,7 +661,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/teams",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
             params={"ids": json.dumps(tuple(team_ids))},
         )
         response.raise_for_status()
@@ -611,7 +684,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/category",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -630,7 +703,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/loader",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -649,7 +722,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/game_version",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -669,7 +742,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/license",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -688,7 +761,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/license/{license_id}",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -707,7 +780,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/donation_platform",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -725,7 +798,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/report_type",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -743,7 +816,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/project_type",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -761,7 +834,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/side_type",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -784,7 +857,7 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/tag/{project_id}/forge_updates.json",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
@@ -803,8 +876,702 @@ class ModrinthApi:
 
         response = requests.get(
             f"{self.api_url}/statistics",
-            headers={"User-Agent": self.user_agent},
+            headers=self.__get_headers(),
         )
         response.raise_for_status()
 
         return ModrinthStatistics.from_json(response.json())
+
+
+class ModrinthAuthenticatedApi2(ModrinthApi2):
+    """
+    Used to make requests to Modrinth's API which require authentication.
+
+    This is a very incomplete definition of v2 of Modrinth's API.
+    """
+
+    def __init__(
+        self,
+        *,
+        user_agent: str,
+        authentication: Auth,
+        api_url: str = API_V2_PRODUCTION,
+        always_use_auth: bool = False,
+    ):
+        super().__init__(
+            user_agent=user_agent,
+            api_url=api_url,
+            authentication=authentication,
+            always_use_auth=always_use_auth,
+        )
+
+    def __repr__(self) -> str:
+        return f"ModrinthAuthenticatedApi2(user_agent='{self.user_agent}', authentication='{self.authorization},api_url='{self.api_url}')"
+
+    def _get_headers(self) -> dict[str, str]:
+        headers = {"User-Agent": self.user_agent}
+        if self.authorization is not None:
+            headers["Authorization"] = self.authorization.get_auth_token()
+
+        return headers
+
+    __get_headers = _get_headers
+
+    def delete_project(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+        """
+        Delete a project the user owns.
+
+        Documentation: https://docs.modrinth.com/api/operations/deleteproject/
+
+        :param project_id: The ID or slug of a project_id the current user owns.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/project/{project_id}",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def modify_project(
+        self,
+        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_data: ProjectPatch,
+    ) -> None:
+        """
+        Updates/patches data for a specific project.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifyproject/
+
+        :param project_id: The ID or slug of a project owned by the current user.
+        :param project_data: The data to update for the project.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.patch(
+            f"{self.api_url}/project/{project_id}",
+            headers=self.__get_headers(),
+            data=project_data.to_json(),
+        )
+        response.raise_for_status()
+
+    def modify_projects(
+        self,
+        project_ids: Iterable[MODRINTH_ID | MODRINTH_TEMP_ID],
+        shared_project_data: ProjectPatches,
+    ) -> None:
+        """
+        Updates/patches data for multiple projects at the same time.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifyproject/
+
+        :param project_ids: The IDs/slugs of projects owned by the current user.
+        :param shared_project_data: The data to update for all the listed projects.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.patch(
+            f"{self.api_url}/project",
+            headers=self.__get_headers(),
+            params={"ids": json.dumps(project_ids)},
+            data=shared_project_data.to_json(),
+        )
+        response.raise_for_status()
+
+    def create_project(
+        self, project: ProjectCreate, icon: IMAGE | None = None
+    ) -> Project:
+        """
+        Creates a new project.
+
+        Documentation: https://docs.modrinth.com/api/operations/createproject/
+
+        :param project: Data for the new project.
+        :param icon: The icon for the project.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+        fields: dict = {"data": project.to_json()}
+        if icon is not None:
+            fields["icon"] = icon
+
+        multipart_encoder = MultipartEncoder(fields=fields)
+
+        headers = self.__get_headers()
+        headers["Content-Type"] = multipart_encoder.content_type
+
+        response = requests.post(
+            f"{self.api_url}/project",
+            headers=headers,
+            data=multipart_encoder,
+        )
+        response.raise_for_status()
+
+        return Project.from_json(response.json())
+
+    def delete_project_icon(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+        """
+        Deletes the icon for a project.
+
+        Documentation: https://docs.modrinth.com/api/operations/deleteprojecticon/
+
+        :param project_id: The ID or slug of a project_id the current user owns.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/project/{project_id}/icon",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def change_project_icon(
+        self,
+        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        icon: IMAGE,
+        file_type: IMAGE_FILE_EXTENSION,
+    ) -> None:
+        """
+        Updates/patches data for a specific project.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifyproject/
+
+        :param project_id: The ID or slug of a project owned by the current user.
+        :param icon: The new icon. Must be <= 256KiB in size.
+        :param file_type: The type of file being uploaded.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        headers: dict = self.__get_headers()
+        headers["Content-Type"] = file_type
+
+        response = requests.patch(
+            f"{self.api_url}/project/{project_id}/icon",
+            headers=headers,
+            params={"ext": file_type},
+            data=icon,
+        )
+        response.raise_for_status()
+
+    def add_gallery_image(
+        self,
+        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        image: IMAGE | None,
+        file_type: IMAGE_FILE_EXTENSION,
+        featured: bool,
+        title: str | None,
+        description: str | None,
+        ordering: int | None,
+    ) -> Project:
+        """
+        Add a new image to a project's gallery.
+
+        Documentation: https://docs.modrinth.com/api/operations/addgalleryimage/
+
+        :param project_id: The ID or slug of a project owned by the current user.
+        :param image: The image for the gallery. Must be <= 5MiB.
+        :param file_type: The type of image being uploaded.
+        :param featured: Whether or not the image is featured.
+        :param title: The image's title.
+        :param description: A description to be displayed with the image.
+        :param ordering: The ordering of the image. Order is sort by ordering and then by age.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        headers = self.__get_headers()
+        headers["Content-Type"] = f"image/{file_type}"
+
+        params: dict = {
+            "ext": file_type,
+            "featured": featured,
+        }
+
+        if title is not None:
+            params["title"] = title
+
+        if description is not None:
+            params["description"] = title
+
+        if ordering is not None:
+            params["ordering"] = title
+
+        response = requests.post(
+            f"{self.api_url}/project/{project_id}/gallery",
+            headers=headers,
+            params=params,
+            data=image,
+        )
+        response.raise_for_status()
+
+        return Project.from_json(response.json())
+
+    def delete_gallery_image(
+        self,
+        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        image_url: str,
+    ) -> None:
+        """
+        Deletes the icon for a project.
+
+        Documentation: https://docs.modrinth.com/api/operations/deleteprojecticon/
+
+        :param project_id: The ID or slug of a project_id the current user owns.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/project/{project_id}/gallery",
+            headers=self.__get_headers(),
+            params={"url": image_url},
+        )
+        response.raise_for_status()
+
+    def modify_gallery_image_data(
+        self,
+        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        url: str,
+        featured: bool | None = None,
+        title: str | None = None,
+        description: str | None = None,
+        ordering: int | None = None,
+    ) -> None:
+        """
+        Modify the data associated with a gallery image.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifygalleryimage/
+
+        :param project_id: The ID or slug of a project owned by the current user.
+        :param url: Url to the image to modify the data of.s
+        :param featured: Whether or not the image is featured.
+        :param title: The image's title.
+        :param description: A description to be displayed with the image.
+        :param ordering: The ordering of the image. Order is sort by ordering and then by age.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        params: dict = {
+            "url": url,
+        }
+
+        if featured is not None:
+            params["featured"] = featured
+
+        if title is not None:
+            params["title"] = title
+
+        if description is not None:
+            params["description"] = title
+
+        if ordering is not None:
+            params["ordering"] = title
+
+        response = requests.post(
+            f"{self.api_url}/project/{project_id}/gallery",
+            headers=self.__get_headers(),
+            params=params,
+        )
+        response.raise_for_status()
+
+    def follow_project(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+        """
+        Makes the current user follow the specified project.
+
+        Documentation: https://docs.modrinth.com/api/operations/followproject/
+
+        :param project_id: Project id/slug to follow.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.post(
+            f"{self.api_url}/project/{project_id}/follow",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def unfollow_project(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+        """
+        Makes the current user unfollow the specified project.
+
+        Documentation: https://docs.modrinth.com/api/operations/unfollowproject/
+
+        :param project_id: Project id/slug to unfollow.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/project/{project_id}/follow",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def schedule_project(
+        self,
+        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        time: datetime,
+        requested_status: REQUESTED_PROJECT_STATUS,
+    ) -> None:
+        """
+        Schedules a status change for the specified project at a particular datetime.
+
+        Documentation: https://docs.modrinth.com/api/operations/scheduleproject/
+
+        :param project_id: Project id/slug to schedule.
+        :param time: The time to change the project status.
+        :param requested_status: The status to change the project to.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.post(
+            f"{self.api_url}/project/{project_id}/schedule",
+            headers=self.__get_headers(),
+            data={
+                "time": time.strftime(DATE_FORMAT),
+                "requested_status": requested_status,
+            },
+        )
+        response.raise_for_status()
+
+    def delete_version(self, version_id: MODRINTH_ID) -> None:
+        """
+        Delete a version from a project.
+
+        Documentation: https://docs.modrinth.com/api/operations/deleteversion/
+
+        :param version_id: The ID of a version the current user owns.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/project/{version_id}",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def modify_version(
+        self,
+        version_id: MODRINTH_ID,
+        version_data: VersionPatch,
+    ) -> None:
+        """
+        Updates/patches data for a specific project.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifyversion/
+
+        :param version_id: The ID of a version owned by the current user.
+        :param version_data: The data to update for the version.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.patch(
+            f"{self.api_url}/version/{version_id}",
+            headers=self.__get_headers(),
+            data=version_data.to_json(),
+        )
+        response.raise_for_status()
+
+    def create_version(
+        self,
+        version: VersionCreate,
+        files: dict[str, bytes] | None,
+    ) -> Version:
+        """
+        Creates a new version.
+
+        Each file must be referenced within the `file_parts`.
+        If you choose a `primary_file`, it must be one of the uploaded files.
+
+        `files` can be None only if the upload type is `draft`.
+
+        Accepted file types are `.mrpack`, `.jar`, `.zip`, and `.litemod`.
+
+        Documentation: https://docs.modrinth.com/api/operations/createversion/
+
+        :param version: Data for the new version.
+        :param files: The files which are part of the version where each key is a file name.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+        fields: dict = {"data": version.to_json()}
+        if files is not None:
+            for filename, file in files.items():
+                fields[filename] = file
+
+        multipart_encoder = MultipartEncoder(fields=fields)
+
+        headers = self.__get_headers()
+        headers["Content-Type"] = multipart_encoder.content_type
+
+        response = requests.post(
+            f"{self.api_url}/version",
+            headers=headers,
+            data=multipart_encoder,
+        )
+        response.raise_for_status()
+
+        return Version.from_json(response.json())
+
+    def schedule_version(
+        self,
+        version_id: MODRINTH_ID,
+        time: datetime,
+        requested_status: REQUESTED_PROJECT_STATUS,  # TODO: is this correct
+    ) -> None:
+        """
+        Schedules a status change for the specified version at a particular datetime.
+
+        Documentation: https://docs.modrinth.com/api/operations/scheduleversion/
+
+        :param version_id: ID of the version to schedule.
+        :param time: The time to change the project status.
+        :param requested_status: The status to change the project to.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.post(
+            f"{self.api_url}/version/{version_id}/schedule",
+            headers=self.__get_headers(),
+            data={
+                "time": time.strftime(DATE_FORMAT),
+                "requested_status": requested_status,
+            },
+        )
+        response.raise_for_status()
+
+    def add_files_to_version(
+        self,
+        version_id: MODRINTH_ID,
+        files: dict[str, bytes] | None,
+    ) -> Version:
+        """
+        Adds files to the specified version.
+
+        Each filename must match the names listed in the version's file parts.
+
+        Accepted files are `.mrpack` and `.jar`.
+
+        Documentation: https://docs.modrinth.com/api/operations/addfilestoversion/
+        Should be similar to https://docs.modrinth.com/api/operations/createversion/
+
+        :param version_id: ID of the version to add files to.
+        :param files: The files which are part of the version where each key is a file name.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+        fields: dict = {}
+        if files is not None:
+            for filename, file in files.items():
+                fields[filename] = file
+
+        multipart_encoder = MultipartEncoder(fields=fields)
+
+        headers = self.__get_headers()
+        headers["Content-Type"] = multipart_encoder.content_type
+
+        response = requests.post(
+            f"{self.api_url}/version/{version_id}",
+            headers=headers,
+            data=multipart_encoder,
+        )
+        response.raise_for_status()
+
+        return Version.from_json(response.json())
+
+    def delete_version_file(
+        self,
+        file_hash: HASH,
+        algorithm: HASH_ALGORITHM | Literal["auto"] = "auto",
+        version_id: MODRINTH_ID | None = None,
+    ) -> None:
+        """
+        Delete a file from a project version.
+
+        If `algorithm` is left as `"auto"`,
+        the algorithm will be automatically chosen based on the length of `file_hash`.
+        If `file_hash` is `128` bytes long,
+        it will be set to `sha512`,
+        else it will be set to `sha1`.
+
+        Documentation: https://docs.modrinth.com/api/operations/deletefilefromhash/
+
+        :param file_hash: A `sha1` or `sha512` hash of the file.
+        :param algorithm: The hashing algorithm used for the has.
+        :param version_id: The ID of a version the current user owns.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+        if algorithm == "auto":
+            algorithm = "sha512" if len(file_hash) == 128 else "sha1"
+
+        params: dict = {"algorithm": algorithm}
+        if version_id is not None:
+            params["version_id"] = version_id
+
+        response = requests.delete(
+            f"{self.api_url}/version_file/{file_hash}",
+            headers=self.__get_headers(),
+            params=params,
+        )
+        response.raise_for_status()
+
+    def modify_user(
+        self,
+        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_data: UserPatch,
+    ) -> None:
+        """
+        Updates/patches data for a specific user.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifyuser/
+
+        :param user_id: The ID or slug of the user. Must match the current user.
+        :param user_data: The data to update for the user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.patch(
+            f"{self.api_url}/user/{user_id}",
+            headers=self.__get_headers(),
+            data=user_data.to_json(),
+        )
+        response.raise_for_status()
+
+    def get_self_user(self) -> PersonalUser:
+        """
+        Gets data for your own user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getuser/
+
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/user/",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+        return PersonalUser.from_json(response.json())
+
+    def delete_user_avatar(self, user_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+        """
+        Gets data for your own user.
+
+        Documentation: https://docs.modrinth.com/api/operations/deleteusericon/
+
+        :param user_id: The ID or slug of the user. Must match the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/user/{user_id}/icon",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def change_user_avatar(
+        self,
+        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        image: IMAGE,
+        format: IMAGE_FILE_EXTENSION | None = None,
+    ) -> None:
+        """
+        Gets data for your own user.
+
+        Documentation: https://docs.modrinth.com/api/operations/changeusericon/
+
+        :param user_id: The ID or slug of the user. Must match the current user.
+        :param image: The actual image data. Must be no more than 2MiB.
+        :param format: The image format. Will be provided as the `Content-Type` if provided.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+        headers = self.__get_headers()
+        if format is not None:
+            headers["Content-Type"] = f"image/{format}"
+
+        response = requests.patch(
+            f"{self.api_url}/user/{user_id}/icon",
+            headers=headers,
+            data=image,
+        )
+        response.raise_for_status()
+
+    def get_followed_projects(
+        self,
+        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+    ) -> list[Project]:
+        """
+        Gets data for your own user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getpayouthistory/
+
+        :param user_id: The ID or slug of the user. Must match the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/user/{user_id}/follows",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+        return [Project.from_json(p) for p in response.json()]
+
+    def get_payout_history(
+        self,
+        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+    ) -> list[PayoutHistory]:
+        """
+        Gets payout history for your user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getpayouthistory/
+
+        :param user_id: The ID or slug of the user. Must match the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/user/{user_id}/payouts",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+        return [PayoutHistory.from_json(p) for p in response.json()]
+
+    def withdraw_payout_balance(
+        self,
+        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        amount: int,
+        *,
+        i_understand_the_withdrawal_fees: Literal[True],
+    ) -> None:
+        """
+        Makes a withdrawer of the specified number of US dollars.
+
+        Documentation: https://docs.modrinth.com/api/operations/withdrawpayout/
+
+        :param user_id: The ID or slug of the user. Must match the current user.
+        :param amount:
+        :param i_have_acknowledged_the_withdrawal_fees: Shows that you have read the warnings in the web GUI for withdrawals. Must be True
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+        if i_understand_the_withdrawal_fees is not True:
+            raise ValueError(
+                "You haven't acknowledged the withdrawal warnings in the GUI (including fees). The value `i_have_acknowledged_the_withdrawal_fees` must be set to `True` after doing so."
+            )
+
+        response = requests.post(
+            f"{self.api_url}/user/{user_id}/payouts",
+            headers=self.__get_headers(),
+            params={"amount": amount},
+        )
+        response.raise_for_status()

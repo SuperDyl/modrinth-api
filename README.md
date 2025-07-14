@@ -23,4 +23,4 @@ You should use `try-catch` blocks and deal with each error appropriately.
 This was created using Python 3.13
 but it should be made to work in any currently supported version of Python.
 
-`pip install requests types-requests`
+`pip install requests types-request requests-toolbelt`
