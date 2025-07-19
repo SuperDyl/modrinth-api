@@ -16,15 +16,20 @@ from modrinth.model import (
     GameVersion,
     License,
     Loader,
+    MessageTextBody,
     ModrinthStatistics,
+    Notification,
     PayoutHistory,
+    Permissions,
     Project,
     ProjectCreate,
     ProjectPatch,
     ProjectPatches,
     ProjectDependencies,
     PersonalUser,
+    Report,
     TeamMember,
+    Thread,
     User,
     UserPatch,
     Version,
@@ -979,7 +984,9 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response.raise_for_status()
 
     def create_project(
-        self, project: ProjectCreate, icon: IMAGE | None = None
+        self,
+        project: ProjectCreate,
+        icon: IMAGE | None = None,
     ) -> Project:
         """
         Creates a new project.
@@ -1573,5 +1580,487 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
             f"{self.api_url}/user/{user_id}/payouts",
             headers=self.__get_headers(),
             params={"amount": amount},
+        )
+        response.raise_for_status()
+
+    def get_all_notifications(
+        self,
+        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+    ) -> list[Notification]:
+        """
+        Gets payout history for your user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getpayouthistory/
+
+        :param user_id: The ID or slug of the user. Must match the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/user/{user_id}/notifications",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+        return [Notification.from_json(n) for n in response.json()]
+
+    def get_notification(
+        self,
+        notification_id: MODRINTH_ID,
+    ) -> Notification:
+        """
+        Gets payout history for your user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getpayouthistory/
+
+        :param notification_id: The ID of the notification. Must belong to the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/notification/{notification_id}",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+        return Notification.from_json(response.json())
+
+    def delete_notification(self, notification_id: MODRINTH_ID) -> None:
+        """
+        Delete a notification the user owns.
+
+        Documentation: https://docs.modrinth.com/api/operations/deletenotification/
+
+        :param notification_id: The ID of the notification. Must belong to the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/notification/{notification_id}",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def mark_notification_as_read(self, notification_id: MODRINTH_ID) -> None:
+        """
+        Updates/patches data for a specific project.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifyproject/
+
+        :param notification_id: The ID of the notification. Must belong to the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.patch(
+            f"{self.api_url}/notification/{notification_id}",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def get_notifications(
+        self,
+        notification_ids: Iterable[MODRINTH_ID],
+    ) -> list[Notification]:
+        """
+        Gets payout history for your user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getpayouthistory/
+
+        :param notification_id: The IDs of the notifications. Must belong to the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/notifications",
+            headers=self.__get_headers(),
+            params={"ids": json.dumps(tuple(notification_ids))},
+        )
+        response.raise_for_status()
+
+        return [Notification.from_json(n) for n in response.json()]
+
+    def delete_notifications(self, notification_ids: Iterable[MODRINTH_ID]) -> None:
+        """
+        Delete a notification the user owns.
+
+        Documentation: https://docs.modrinth.com/api/operations/deletenotification/
+
+        :param notification_id: The ID of the notification. Must belong to the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/notifications",
+            headers=self.__get_headers(),
+            params={"ids": json.dumps(tuple(notification_ids))},
+        )
+        response.raise_for_status()
+
+    def mark_notifications_as_read(self, notification_ids: MODRINTH_ID) -> None:
+        """
+        Updates/patches data for a specific project.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifyproject/
+
+        :param notification_id: The ID of the notification. Must belong to the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.patch(
+            f"{self.api_url}/notifications",
+            headers=self.__get_headers(),
+            params={"ids": json.dumps(notification_ids)},
+        )
+        response.raise_for_status()
+
+    def get_open_reports(
+        self,
+        count: int,
+    ) -> list[Report]:
+        """
+        Gets payout history for your user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getpayouthistory/
+
+        :param count: The maximum number of open reports to return.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/report",
+            headers=self.__get_headers(),
+            params={"count": count},
+        )
+        response.raise_for_status()
+
+        return [Report.from_json(r) for r in response.json()]
+
+    def make_report(
+        self,
+        report_type: str,
+        item_id: MODRINTH_ID,
+        item_type: Literal["project", "user", "version"],
+        body: str,
+    ) -> list[Report]:
+        """
+        Gets payout history for your user.
+
+        Documentation: https://docs.modrinth.com/api/operations/submitreport/
+
+        :param report_type: The type of report being sent. The categories are not listed.
+        :param item_id: ID of the item being reported.
+        :param item_type: Type of item being reported.
+        :param body: Explanation text of the report.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.post(
+            f"{self.api_url}/report",
+            headers=self.__get_headers(),
+            params={
+                "report_type": report_type,
+                "item_id": item_id,
+                "item_type": item_type,
+                "body": body,
+            },
+        )
+        response.raise_for_status()
+
+        return [Report.from_json(r) for r in response.json()]
+
+    def get_report(self, report_id: MODRINTH_ID) -> Report:
+        """
+        Gets the specified report owned by the user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getreport/
+
+        :param report_id: The ID of the report.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/report/{report_id}",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+        return Report.from_json(response.json())
+
+    def modify_report(
+        self,
+        report_id: MODRINTH_ID,
+        body: str | None = None,
+        closed: bool | None = None,
+    ) -> None:
+        """
+        Updates information for a report.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifyreport/
+
+        :param report_id: The ID of the report.
+        :param body: Explanation text of the report.
+        :param closed: Whether the report should be closed or not.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+        data: dict = {}
+        if body is not None:
+            data["body"] = body
+        if closed is not None:
+            data["closed"] = closed
+
+        response = requests.patch(
+            f"{self.api_url}/report/{report_id}",
+            headers=self.__get_headers(),
+            data=data,
+        )
+        response.raise_for_status()
+
+    def get_reports(self, report_ids: Iterable[MODRINTH_ID]) -> list[Report]:
+        """
+        Gets multiple specified reports owned by the user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getreports/
+
+        :param report_ids: The IDs of the reports.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/reports",
+            headers=self.__get_headers(),
+            params={"ids": json.dumps(tuple(report_ids))},
+        )
+        response.raise_for_status()
+
+        return [Report.from_json(r) for r in response.json()]
+
+    def get_thread(self, thread_id: MODRINTH_ID) -> Thread:
+        """
+        Gets the specified thread accessible to the user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getreport/
+
+        :param thread_id: The ID of the thread.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/thread/{thread_id}",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+        return Thread.from_json(response.json())
+
+    def send_text_message_in_thread(
+        self,
+        thread_id: MODRINTH_ID,
+        message: MessageTextBody,
+    ) -> Thread:
+        """
+        Sends a text message in a texting thread.
+
+        Documentation: https://docs.modrinth.com/api/operations/sendthreadmessage/
+
+        :param thread_id: The ID of the thread.
+        :param message: The data to send as part of the text.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+        response = requests.post(
+            f"{self.api_url}/thread/{thread_id}",
+            headers=self.__get_headers(),
+            data=message.to_json(),
+        )
+        response.raise_for_status()
+
+        return Thread.from_json(response.json())
+
+    def get_threads(self, thread_ids: Iterable[MODRINTH_ID]) -> list[Thread]:
+        """
+        Gets the specified threads accessible to the user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getthreads/
+
+        :param thread_id: The IDs of the threads.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/threads",
+            headers=self.__get_headers(),
+            data={"ids": json.dumps(tuple(thread_ids))},
+        )
+        response.raise_for_status()
+
+        return [Thread.from_json(t) for t in response.json()]
+
+    def delete_thread_message(self, thread_id: MODRINTH_ID) -> None:
+        """
+        Delete a thread message the user owns.
+
+        Documentation: https://docs.modrinth.com/api/operations/deletethreadmessage/
+
+        :param thread_id: The ID of the thread. Must belong to the current user.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/message/{thread_id}", headers=self.__get_headers()
+        )
+        response.raise_for_status()
+
+    def get_team_members(self, team_id: MODRINTH_ID) -> list[TeamMember]:
+        """
+        Gets members of a team accessible to the user.
+
+        Documentation: https://docs.modrinth.com/api/operations/getreport/
+
+        :param team_id: The ID of the team.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+
+        response = requests.get(
+            f"{self.api_url}/team/{team_id}/members",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+        return [TeamMember.from_json(u) for u in response.json()]
+
+    def add_user_to_team(self, team_id: MODRINTH_ID, user_id: MODRINTH_ID) -> None:
+        """
+        Adds a the specified user to the specified team.
+
+        Documentation: https://docs.modrinth.com/api/operations/sendthreadmessage/
+
+        :param team_id: The ID of the team.
+        :param user_id: The ID of the user to add. Cannot be their username.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+        response = requests.post(
+            f"{self.api_url}/team/{team_id}/members",
+            headers=self.__get_headers(),
+            data={"user_id": user_id},
+        )
+        response.raise_for_status()
+
+    def join_team(self, team_id: MODRINTH_ID) -> None:
+        """
+        Joins the current user to the specified team.
+
+        Documentation: https://docs.modrinth.com/api/operations/sendthreadmessage/
+
+        :param team_id: The ID of the team.
+        :param user_id: The ID of the user to add. Cannot be their username.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+        response = requests.post(
+            f"{self.api_url}/team/{team_id}/join",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def remove_team_member(
+        self,
+        team_id: MODRINTH_ID,
+        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+    ) -> None:
+        """
+        Remove a user from the team.
+
+        Documentation: https://docs.modrinth.com/api/operations/deleteteammember/
+
+        :param team_id: The ID of the team.
+        :param user_id: The ID or username of the user to add.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.delete(
+            f"{self.api_url}/team/{team_id}/members/{user_id}",
+            headers=self.__get_headers(),
+        )
+        response.raise_for_status()
+
+    def modify_team_member(
+        self,
+        team_id: MODRINTH_ID,
+        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        role: str | None,
+        permissions: Permissions | None,
+        payouts_split: int | None,
+        ordering: int | None,
+    ) -> None:
+        """
+        Updates information for a team member.
+
+        Documentation: https://docs.modrinth.com/api/operations/modifyteammember/
+
+        :param team_id: The ID of the team.
+        :param user_id: The ID or username of the team member to modify.
+        :param role: The user's team role.
+        :param permissions: The user's team permissions.
+        :param payouts_split: The user's payout split.
+        :param ordering: The user's ordering.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        data: dict = {}
+        if role is not None:
+            data["role"] = role
+        if permissions is not None:
+            data["permissions"] = permissions
+        if payouts_split is not None:
+            data["payouts_split"] = payouts_split
+        if ordering is not None:
+            data["ordering"] = ordering
+
+        response = requests.patch(
+            f"{self.api_url}/team/{team_id}/members/{user_id}",
+            headers=self.__get_headers(),
+            data=data,
+        )
+        response.raise_for_status()
+
+    def transfer_team_ownership(
+        self,
+        team_id: MODRINTH_ID,
+        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+    ) -> None:
+        """
+        Transfers ownership of the team to the other user.
+
+        Documentation: https://docs.modrinth.com/api/operations/transferteamownership/
+
+        :param team_id: The ID of the team.
+        :param user_id: The ID or username of the team member to give the team to.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        """
+
+        response = requests.patch(
+            f"{self.api_url}/team/{team_id}/owner",
+            headers=self.__get_headers(),
+            data={"user_id": user_id},
         )
         response.raise_for_status()

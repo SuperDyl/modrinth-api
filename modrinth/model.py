@@ -12,6 +12,8 @@ from modrinth.types import (
     LOADER,
     MODRINTH_ID,
     MODRINTH_TEMP_ID,
+    PROJECT_STATUS,
+    PROJECT_TYPE,
     REQUESTED_PROJECT_STATUS,
     REQUESTED_VERSION_STATUS,
     SHA1_HASH,
@@ -414,10 +416,13 @@ class SingleHashMapping:
         :param json_: The list containing the same values expected by `SingleHashMapping`
         :raise KeyError: If any required values for `SingleHashMapping` are not defined.
         """
-        return SingleHashMapping(
-            algorithm=cast(HASH_ALGORITHM, json_[0]),
-            hash=json_[1],
-        )
+        try:
+            return SingleHashMapping(
+                algorithm=cast(HASH_ALGORITHM, json_[0]),
+                hash=json_[1],
+            )
+        except IndexError as index_error:
+            raise KeyError(index_error)
 
     def to_json(self) -> list[str]:
         """
@@ -1125,18 +1130,7 @@ class Project:
     client_side: SUPPORT
     server_side: SUPPORT
     body: str
-    status: Literal[
-        "approved",
-        "archived",
-        "rejected",
-        "draft",
-        "unlisted",
-        "processing",
-        "withheld",
-        "scheduled",
-        "private",
-        "unknown",
-    ]
+    status: PROJECT_STATUS
     requested_status: REQUESTED_PROJECT_STATUS | None
     additional_categories: list[str]
     issues_url: str | None
@@ -1144,7 +1138,7 @@ class Project:
     wiki_url: str | None
     discord_url: str | None
     donation_urls: list[DonationLink]
-    project_type: Literal["mod", "modpack", "resourcepack", "shader"]
+    project_type: PROJECT_TYPE
     downloads: int
     icon_url: str | None
     color: Color | None
@@ -1277,21 +1271,7 @@ class ProjectCreate:
     client_side: SUPPORT | Empty
     server_side: SUPPORT | Empty
     body: str | Empty
-    status: (
-        Literal[
-            "approved",
-            "archived",
-            "rejected",
-            "draft",
-            "unlisted",
-            "processing",
-            "withheld",
-            "scheduled",
-            "private",
-            "unknown",
-        ]
-        | Empty
-    )
+    status: PROJECT_STATUS | Empty
     requested_status: REQUESTED_PROJECT_STATUS | None | Empty
     additional_categories: list[str] | Empty
     issues_url: str | None | Empty
@@ -1301,7 +1281,7 @@ class ProjectCreate:
     donation_urls: list[DonationLink] | Empty
     license_id: str | Empty
     license_url: str | None | Empty
-    project_type: Literal["mod", "modpack"]  # TODO: This seems incorrect
+    project_type: PROJECT_TYPE
     initial_versions: Empty
     is_draft: Literal[True]
     gallery_items: Empty
@@ -1407,21 +1387,7 @@ class ProjectPatch:
     client_side: SUPPORT | Empty
     server_side: SUPPORT | Empty
     body: str | Empty
-    status: (
-        Literal[
-            "approved",
-            "archived",
-            "rejected",
-            "draft",
-            "unlisted",
-            "processing",
-            "withheld",
-            "scheduled",
-            "private",
-            "unknown",
-        ]
-        | Empty
-    )
+    status: PROJECT_STATUS | Empty
     requested_status: (
         Literal["approved", "archived", "unlisted", "private", "draft"] | None | Empty
     )
@@ -1878,7 +1844,7 @@ class Category:
 
     icon: SVG
     name: str
-    project_type: str
+    project_type: PROJECT_TYPE
     header: str
 
     @classmethod
@@ -1918,7 +1884,7 @@ class Loader:
 
     icon: SVG
     name: str
-    project_type: str
+    project_type: PROJECT_TYPE
     header: str
 
     @classmethod
@@ -2199,4 +2165,378 @@ class PayoutHistory:
             "all_time": self.all_time,
             "last_month": self.last_month,
             "payouts": [p.to_json() for p in self.payouts],
+        }
+
+
+@dataclass
+class ActionRoute:
+    """
+    The api endpoint necessary to perform the action.
+
+    Documentation: https://docs.modrinth.com/api/operations/getusernotifications/#response
+    See actions/action_route
+    """
+
+    http_method: str
+    path: str
+
+    @classmethod
+    def from_json(cls, json_: list[str]) -> "ActionRoute":
+        """
+        :param json_: The dictionary containing the same keys expected by `ActionRoute`
+        :raise KeyError: If any required values for `ActionRoute` are not defined.
+        """
+        try:
+            return ActionRoute(
+                http_method=json_[0],
+                path=json_[1],
+            )
+        except IndexError as index_error:
+            raise KeyError(index_error)
+
+    def to_json(self) -> list[str]:
+        """
+        Convert back into a dictionary representation of a JSON `ActionRoute` object.
+        """
+        return [
+            self.http_method,
+            self.path,
+        ]
+
+
+@dataclass
+class NotificationAction:
+    """
+    Actions that can be performed based on a notification.
+
+    Documentation: https://docs.modrinth.com/api/operations/getusernotifications/#response
+    See actions
+    """
+
+    title: str
+    action_route: list[ActionRoute]
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "NotificationAction":
+        """
+        :param json_: The dictionary containing the same keys expected by `NotificationAction`
+        :raise KeyError: If any required values for `NotificationAction` are not defined.
+        """
+        return NotificationAction(
+            title=json_["title"],
+            action_route=[ActionRoute.from_json(r) for r in json_["action_route"]],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `NotificationAction` object.
+        """
+        return {
+            "title": self.title,
+            "action_route": [r.to_json() for r in self.action_route],
+        }
+
+
+@dataclass
+class Notification:
+    """
+    An individual user notification.
+
+    Documentation: https://docs.modrinth.com/api/operations/getusernotifications/
+    """
+
+    id: MODRINTH_ID  # TODO: is this a modrinth ID or a different kind of ID?
+    user_id: MODRINTH_ID
+    type: (
+        Literal["project_update", "team_invite", "status_change", "moderator_message"]
+        | None
+    )
+    title: str
+    text: str
+    link: str
+    read: bool
+    created: datetime
+    actions: list[NotificationAction]
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "Notification":
+        """
+        :param json_: The dictionary containing the same keys expected by `Notification`
+        :raise KeyError: If any required values for `Notification` are not defined.
+        """
+        return Notification(
+            id=json_["id"],
+            user_id=json_["user_id"],
+            type=json_.get("type", None),
+            title=json_["title"],
+            text=json_["text"],
+            link=json_["link"],
+            read=json_["read"],
+            created=datetime.fromisoformat(json_["created"]),
+            actions=[NotificationAction.from_json(a) for a in json_["actions"]],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `Notification` object.
+        """
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "type": self.type,
+            "title": self.title,
+            "text": self.text,
+            "link": self.link,
+            "read": self.read,
+            "created": self.created.strftime(DATE_FORMAT),
+            "actions": [a.to_json() for a in self.actions],
+        }
+
+
+@dataclass
+class Report:
+    """
+    An individual report accessible to the user.
+
+    Documentation: https://docs.modrinth.com/api/operations/getopenreports/
+    """
+
+    report_type: str
+    item_id: MODRINTH_ID
+    item_type: Literal["project", "user", "version"]
+    body: str
+    id: MODRINTH_ID
+    reporter: MODRINTH_ID
+    created: datetime
+    closed: bool
+    thread_id: MODRINTH_ID
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "Report":
+        """
+        :param json_: The dictionary containing the same keys expected by `Report`
+        :raise KeyError: If any required values for `Report` are not defined.
+        """
+        return Report(
+            report_type=json_["report_type"],
+            item_id=json_["item_id"],
+            item_type=json_["item_type"],
+            body=json_["body"],
+            id=json_["id"],
+            reporter=json_["reporter"],
+            created=datetime.fromisoformat(json_["created"]),
+            closed=json_["closed"],
+            thread_id=json_["thread_id"],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `Report` object.
+        """
+        return {
+            "report_type": self.report_type,
+            "item_id": self.item_id,
+            "item_type": self.item_type,
+            "body": self.body,
+            "id": self.id,
+            "reporter": self.reporter,
+            "created": self.created.strftime(DATE_FORMAT),
+            "closed": self.closed,
+            "thread_id": self.thread_id,
+        }
+
+
+@dataclass
+class MessageBody:
+    """
+    An individual message as part of a thread.
+
+    Documentation: https://docs.modrinth.com/api/operations/getthread/#response
+    See messages
+    """
+
+    type: Literal["status_change", "text", "thread_closure", "deleted"]
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "MessageBody":
+        """
+        :param json_: The dictionary containing the same keys expected by `MessageBody`
+        :raise KeyError: If any required values for `MessageBody` are not defined.
+        """
+        return MessageBody(
+            type=json_["type"],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `MessageBody` object.
+        """
+        return {
+            "type": self.type,
+        }
+
+
+@dataclass
+class MessageTextBody(MessageBody):
+    """
+    An individual text message as part of a thread.
+
+    Documentation: https://docs.modrinth.com/api/operations/getthread/#response
+    See messages
+    """
+
+    body: str
+    private: bool
+    replying_to: MODRINTH_ID | None
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "MessageTextBody":
+        """
+        :param json_: The dictionary containing the same keys expected by `MessageTextBody`
+        :raise KeyError: If any required values for `MessageTextBody` are not defined.
+        """
+        return MessageTextBody(
+            type=json_["type"],
+            body=json_["body"],
+            private=json_["private"],
+            replying_to=json_["replying_to"],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `MessageTextBody` object.
+        """
+        return {
+            "type": self.type,
+            "body": self.body,
+            "private": self.private,
+            "replying_to": self.replying_to,
+        }
+
+
+@dataclass
+class MessageStatusChangeBody(MessageBody):
+    """
+    An individual text message as part of a thread.
+
+    Documentation: https://docs.modrinth.com/api/operations/getthread/#response
+    See messages
+    """
+
+    old_status: PROJECT_STATUS
+    new_status: PROJECT_STATUS
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "MessageStatusChangeBody":
+        """
+        :param json_: The dictionary containing the same keys expected by `MessageStatusChangeBody`
+        :raise KeyError: If any required values for `MessageStatusChangeBody` are not defined.
+        """
+        return MessageStatusChangeBody(
+            type=json_["type"],
+            old_status=json_["old_status"],
+            new_status=json_["new_status"],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `MessageStatusChangeBody` object.
+        """
+        return {
+            "type": self.type,
+            "old_status": self.old_status,
+            "new_status": self.new_status,
+        }
+
+
+@dataclass
+class Message:
+    """
+    An individual message as part of a thread.
+
+    Documentation: https://docs.modrinth.com/api/operations/getthread/#response
+    See messages
+    """
+
+    id: MODRINTH_ID
+    author_id: MODRINTH_ID | None
+    body: MessageBody
+    created: datetime
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "Message":
+        """
+        :param json_: The dictionary containing the same keys expected by `Message`
+        :raise KeyError: If any required values for `Message` are not defined.
+        """
+        body: MessageBody
+        body_json: dict = json_["body"]
+        match body_json["type"]:
+            case "text":
+                body = MessageTextBody.from_json(body_json)
+            case "status_change":
+                body = MessageStatusChangeBody.from_json(body_json)
+            case _:
+                body = MessageBody.from_json(body_json)
+
+        return Message(
+            id=json_["id"],
+            author_id=json_["author_id"],
+            body=body,
+            created=datetime.fromisoformat(json_["created"]),
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `Message` object.
+        """
+        return {
+            "id": self.id,
+            "author_id": self.author_id,
+            "body": self.body.to_json(),
+            "created": self.created.strftime(DATE_FORMAT),
+        }
+
+
+@dataclass
+class Thread:
+    """
+    An individual thread available to the user.
+
+    Documentation: https://docs.modrinth.com/api/operations/getthread/
+    """
+
+    id: MODRINTH_ID
+    type: Literal["project", "report", "direct_message"]
+    project_id: MODRINTH_ID | None
+    report_id: MODRINTH_ID | None
+    messages: list[Message]
+    members: list[User]
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "Thread":
+        """
+        :param json_: The dictionary containing the same keys expected by `Thread`
+        :raise KeyError: If any required values for `Thread` are not defined.
+        """
+        return Thread(
+            id=json_["id"],
+            type=json_["type"],
+            project_id=json_["project_id"],
+            report_id=json_["report_id"],
+            messages=[Message.from_json(m) for m in json_["messages"]],
+            members=[User.from_json(m) for m in json_["members"]],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `Thread` object.
+        """
+        return {
+            "id": self.id,
+            "type": self.type,
+            "project_id": self.project_id,
+            "report_id": self.report_id,
+            "messages": [m.to_json() for m in self.messages],
+            "members": [m.to_json() for m in self.members],
         }

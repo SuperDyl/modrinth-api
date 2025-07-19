@@ -94,7 +94,9 @@ Some image, usually used for projects and users.
 Allowed formats are `png`, `jpg`, `jpeg`, `bmp`, `gif`, `webp`, `svg`, `svgz`, and `rgb`.
 """
 
-REQUESTED_PROJECT_STATUS = Literal["approved", "archived", "unlisted", "private", "draft"]
+REQUESTED_PROJECT_STATUS = Literal[
+    "approved", "archived", "unlisted", "private", "draft"
+]
 """
 The status that the project owner would like the project to be.
 """
@@ -114,7 +116,9 @@ VERSION_TYPE = Literal["release", "beta", "alpha"]
 The stage of version stability.
 """
 
-VERSION_STATUS = Literal["listed", "archived", "draft", "unlisted", "scheduled", "unknown"]
+VERSION_STATUS = Literal[
+    "listed", "archived", "draft", "unlisted", "scheduled", "unknown"
+]
 """
 Status of the specified version.
 """
@@ -125,3 +129,27 @@ The status the project owner would like the version to be.
 """
 
 HASH_ALGORITHM = Literal["sha1", "sha512"]
+"""
+The names of hashing algorithms supported by Modrinth.
+"""
+
+PROJECT_STATUS = Literal[
+    "approved",
+    "archived",
+    "rejected",
+    "draft",
+    "unlisted",
+    "processing",
+    "withheld",
+    "scheduled",
+    "private",
+    "unknown",
+]
+"""
+Current status for the project.
+"""
+
+PROJECT_TYPE = Literal["mod", "modpack", "resourcepack", "shader", "plugin", "datapack"]
+"""
+The types of projects available on Modrinth.
+"""
