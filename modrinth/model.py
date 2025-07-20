@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Iterable, Literal, TypeAlias, TypeVar, cast
+from typing import Any, cast, Iterable, Literal, TypeAlias, TypeVar, Union
 
 from modrinth.types import (
     Empty,
@@ -25,7 +25,7 @@ from modrinth.types import (
     VERSION_TYPE,
 )
 
-DATE_FORMAT = "%YYYY-%MM-%DD"
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 @dataclass
@@ -2734,7 +2734,7 @@ class ModifiedTimestampFacet(Facet):
     type: Literal["modified_timestamp"] = "modified_timestamp"
 
 
-_AnyFacetsTuple: TypeAlias = tuple[Facet | "AnyFacets", ...]
+_AnyFacetsTuple: TypeAlias = tuple[Union[Facet, "AnyFacets"], ...]
 
 
 class AllFacets:

@@ -108,7 +108,7 @@ class ModrinthApi2:
         self.always_use_auth = always_use_auth
 
     def __repr__(self) -> str:
-        return f"ModrinthApi2(user_agent='{self.user_agent}', authentication='{self.authorization},api_url='{self.api_url}')"
+        return f"ModrinthApi2(user_agent='{self.user_agent}', authentication='{self.authorization}',api_url='{self.api_url}', always_use_auth='{self.always_use_auth}')"
 
     def _get_headers(self) -> dict[str, str]:
         headers = {"User-Agent": self.user_agent}
@@ -958,7 +958,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         )
 
     def __repr__(self) -> str:
-        return f"ModrinthAuthenticatedApi2(user_agent='{self.user_agent}', authentication='{self.authorization},api_url='{self.api_url}')"
+        return f"ModrinthAuthenticatedApi2(user_agent='{self.user_agent}', authentication='{self.authorization}',api_url='{self.api_url}')"
 
     def _get_headers(self) -> dict[str, str]:
         headers = {"User-Agent": self.user_agent}
