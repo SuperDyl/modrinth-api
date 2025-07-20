@@ -1,6 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal, TypeVar, cast
+from typing import Any, Iterable, Literal, TypeAlias, TypeVar, cast
 
 from modrinth.types import (
     Empty,
@@ -2540,3 +2541,231 @@ class Thread:
             "messages": [m.to_json() for m in self.messages],
             "members": [m.to_json() for m in self.members],
         }
+
+
+@dataclass
+class SearchResult:
+    """
+    Results from completing a project search.
+
+    Documentation: https://docs.modrinth.com/api/operations/searchprojects/
+    """
+
+    hits: list[Project]
+    offset: int
+    limit: int
+    total_hits: int
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "SearchResult":
+        """
+        :param json_: The dictionary containing the same keys expected by `SearchResult`
+        :raise KeyError: If any required values for `SearchResult` are not defined.
+        """
+        return SearchResult(
+            hits=[Project.from_json(p) for p in json_["hits"]],
+            offset=json_["offset"],
+            limit=json_["limit"],
+            total_hits=json_["total_hits"],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `SearchResult` object.
+        """
+        return {
+            "hits": [p.to_json() for p in self.hits],
+            "offset": self.offset,
+            "limit": self.limit,
+            "total_hits": self.total_hits,
+        }
+
+
+NON_COMPARABLE = Literal[":", "=", "!="]
+
+
+@dataclass
+class Facet:
+    operation: Literal[":", "=", "!=", ">=", ">", "<=", "<"]
+    value: Any
+    type: Literal[
+        "project_type",
+        "categories",
+        "versions",
+        "client_side",
+        "server_side",
+        "open_source",
+        "title",
+        "author",
+        "follows",
+        "project_id",
+        "license",
+        "downloads",
+        "color",
+        "created_timestamp",
+        "modified_timestamp",
+    ]
+
+    def __repr__(self) -> str:
+        return (
+            f"Facet(operation={self.operation}, value={self.value}, type={self.type})"
+        )
+
+    def __str__(self) -> str:
+        return f"{self.type}{self.operation}{str(self.value)}"
+
+
+@dataclass
+class ProjectTypeFacet(Facet):
+    operation: NON_COMPARABLE
+    value: PROJECT_TYPE
+    type: Literal["project_type"] = "project_type"
+
+
+@dataclass
+class CategoryFacet(Facet):
+    operation: NON_COMPARABLE
+    value: Literal[
+        "Adventure",
+        "Cursed",
+        "Decoration",
+        "Economy",
+        "Equipment",
+        "Food",
+        "Game Mechanics",
+        "Library",
+        "Magic",
+        "Management",
+        "Minigame",
+        "Mobs",
+        "Optimization",
+        "Social",
+        "Storage",
+        "Technology",
+        "Transportation",
+        "Utility",
+        "World Generation",
+    ]
+    type: Literal["categories"] = "categories"
+
+
+@dataclass
+class VersionFacet(Facet):
+    value: GAME_VERSION
+    type: Literal["versions"] = "versions"
+
+
+@dataclass
+class ClientSideFacet(Facet):
+    operation: NON_COMPARABLE
+    value: SUPPORT
+    type: Literal["client_side"] = "client_side"
+
+
+@dataclass
+class ServerSideFacet(Facet):
+    operation: NON_COMPARABLE
+    value: SUPPORT
+    type: Literal["server_side"] = "server_side"
+
+
+@dataclass
+class OpenSourceFacet(Facet):
+    operation: NON_COMPARABLE
+    value: bool
+    type: Literal["open_source"] = "open_source"
+
+
+@dataclass
+class TitleFacet(Facet):
+    operation: NON_COMPARABLE
+    value: str
+    type: Literal["title"] = "title"
+
+
+@dataclass
+class AuthorFacet(Facet):
+    operation: NON_COMPARABLE
+    value: str
+    type: Literal["author"] = "author"
+
+
+@dataclass
+class FollowsFacet(Facet):
+    value: int
+    type: Literal["follows"] = "follows"
+
+
+@dataclass
+class ProjectIdFacet(Facet):
+    operation: NON_COMPARABLE
+    value: MODRINTH_ID
+    type: Literal["project_id"] = "project_id"
+
+
+@dataclass
+class LicenseFacet(Facet):
+    operation: NON_COMPARABLE
+    value: str
+    type: Literal["license"] = "license"
+
+
+@dataclass
+class DownloadsFacet(Facet):
+    value: int
+    type: Literal["downloads"] = "downloads"
+
+
+@dataclass
+class ColorFacet(Facet):
+    value: Color
+    type: Literal["color"] = "color"
+
+
+@dataclass
+class CreatedTimestampFacet(Facet):
+    value: datetime
+    type: Literal["created_timestamp"] = "created_timestamp"
+
+
+@dataclass
+class ModifiedTimestampFacet(Facet):
+    value: datetime
+    type: Literal["modified_timestamp"] = "modified_timestamp"
+
+
+_AnyFacetsTuple: TypeAlias = tuple[Facet | "AnyFacets", ...]
+
+
+class AllFacets:
+    """
+    Search filters that must all be true.
+
+    Documentation: https://docs.modrinth.com/api/operations/searchprojects/#query-parameters
+    See facets
+    """
+
+    any_facets: _AnyFacetsTuple
+
+    def __init__(self, any_facet_groups: Iterable[Facet | "AnyFacets"]) -> None:
+        self.any_facets = tuple(any_facet_groups)
+
+    def to_json(self) -> list:
+        return [(x if isinstance(x, Facet) else x.to_json()) for x in self.any_facets]
+
+
+class AnyFacets:
+    """
+    Search filters where at least one filter must be true.
+
+    Documentation: https://docs.modrinth.com/api/operations/searchprojects/#query-parameters
+    See facets
+    """
+
+    all_facets: tuple[AllFacets, ...]
+
+    def __init__(self, facets: Iterable[AllFacets]) -> None:
+        self.all_facets = tuple(facets)
+
+    def to_json(self) -> list:
+        return [x.to_json() for x in self.all_facets]

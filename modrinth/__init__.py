@@ -8,6 +8,7 @@ from requests_toolbelt import MultipartEncoder
 
 from modrinth.constants import API_V2_PRODUCTION
 from modrinth.model import (
+    AllFacets,
     Category,
     DATE_FORMAT,
     DeprecatedLicense,
@@ -28,6 +29,7 @@ from modrinth.model import (
     ProjectDependencies,
     PersonalUser,
     Report,
+    SearchResult,
     TeamMember,
     Thread,
     User,
@@ -116,6 +118,51 @@ class ModrinthApi2:
         return headers
 
     __get_headers = _get_headers
+
+    def search_projects(
+        self,
+        query: str | None = None,
+        facets: AllFacets | None = None,
+        index: (
+            Literal["relevance", "downloads", "follows", "newest", "updated"] | None
+        ) = None,
+        offset: int | None = None,
+        limit: int | None = None,
+    ) -> list[SearchResult]:
+        """
+        Gets all data for a project.
+
+        Documentation: https://docs.modrinth.com/api/operations/getprojectversions/
+
+        :param query: The text to search for.
+        :param facets: Filters on the search.
+        :param index: The sorting method. Defaults to "relevance".
+        :param offset: The number of results to skip.
+        :param limit: The number of results to collect. Must be in the range 1..100 Defaults to 10.
+        :raises HTTPError: If the HTTP request to the Modrinth API fails.
+        :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
+        :raises KeyError: If the response body is missing a required field.
+        """
+        params: dict = {}
+        if query is not None:
+            params["query"] = query
+        if facets is not None:
+            params["facets"] = json.dumps(facets.to_json())
+        if index is not None:
+            params["index"] = index
+        if offset is not None:
+            params["offset"] = offset
+        if limit is not None:
+            params["limit"] = limit
+
+        response = requests.get(
+            f"{self.api_url}/search",
+            headers=self.__get_headers(),
+            params=params,
+        )
+        response.raise_for_status()
+
+        return [SearchResult.from_json(s) for s in response.json()]
 
     def get_project(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> Project:
         """
