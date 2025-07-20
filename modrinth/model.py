@@ -1086,6 +1086,7 @@ class GalleryItem:
     description: str | None
     created: datetime
     ordering: int
+    raw_url: str
 
     @classmethod
     def from_json(cls, json_: dict) -> "GalleryItem":
@@ -1100,6 +1101,7 @@ class GalleryItem:
             description=json_.get("description"),
             created=datetime.fromisoformat(json_["created"]),
             ordering=json_["ordering"],
+            raw_url=json_["raw_url"],
         )
 
     def to_json(self) -> dict:
@@ -1113,6 +1115,7 @@ class GalleryItem:
             "description": self.description,
             "created": self.created.strftime(DATE_FORMAT),
             "ordering": self.ordering,
+            "raw_url": self.raw_url,
         }
 
 
@@ -1145,10 +1148,11 @@ class Project:
     color: Color | None
     thread_id: MODRINTH_ID
     monetization_status: Literal["monetized", "demonetized", "force-demonetized"]
+    organization: MODRINTH_ID
     id: MODRINTH_ID
     team: MODRINTH_ID
     body_url: None
-    moderator_message: ModeratorMessage
+    moderator_message: ModeratorMessage | None
     published: datetime
     updated: datetime
     approved: datetime | None
@@ -1167,8 +1171,12 @@ class Project:
         :raise KeyError: If any required values for `Project` are not defined.
         """
         color_rgb_int: int | None = json_.get("color")
-        approved_json: str | None = json_.get("approved_json")
-        queued_json: str | None = json_.get("queued_json")
+        approved_json: str | None = json_.get("approved")
+        queued_json: str | None = json_.get("queued")
+
+        moderator_message: ModeratorMessage | None = None
+        if (x := json_.get("moderator_message")) is not None:
+            moderator_message = ModeratorMessage.from_json(x)
 
         return Project(
             slug=json_["slug"],
@@ -1192,10 +1200,11 @@ class Project:
             color=None if color_rgb_int is None else Color.from_rgb_int(color_rgb_int),
             thread_id=json_["thread_id"],
             monetization_status=json_["monetization_status"],
+            organization=json_["organization"],
             id=json_["id"],
             team=json_["team"],
             body_url=json_.get("body_url"),
-            moderator_message=ModeratorMessage.from_json(json_["moderator_message"]),
+            moderator_message=moderator_message,
             published=datetime.fromisoformat(json_["published"]),
             updated=datetime.fromisoformat(json_["updated"]),
             approved=(
@@ -1236,10 +1245,15 @@ class Project:
             "color": None if self.color is None else self.color.to_rgb_int(),
             "thread_id": self.thread_id,
             "monetization_status": self.monetization_status,
+            "organization": self.organization,
             "id": self.id,
             "team": self.team,
             "body_url": self.body_url,
-            "moderator_message": self.moderator_message.to_json(),
+            "moderator_message": (
+                None
+                if self.moderator_message is None
+                else self.moderator_message.to_json()
+            ),
             "published": self.published.strftime(DATE_FORMAT),
             "updated": self.updated.strftime(DATE_FORMAT),
             "approved": (
