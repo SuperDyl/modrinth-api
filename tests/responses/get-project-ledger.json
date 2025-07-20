@@ -1,0 +1,60 @@
+{
+    "client_side": "optional",
+    "server_side": "optional",
+    "game_versions": [
+        "1.21",
+        "1.21.8"
+    ],
+    "id": "gvQqBUqZ",
+    "slug": "lithium",
+    "project_type": "mod",
+    "team": "peSx5UYg",
+    "organization": "LjcZDkRW",
+    "title": "Lithium",
+    "description": "Some description text!",
+    "body": "This is a really long body text.\n",
+    "body_url": null,
+    "published": "2021-01-03T00:56:52.292581Z",
+    "updated": "2025-07-17T18:40:04.965338Z",
+    "approved": "2021-01-03T00:56:52.292581Z",
+    "queued": null,
+    "status": "approved",
+    "requested_status": null,
+    "moderator_message": null,
+    "license": {
+        "id": "LGPL-3.0-only",
+        "name": "GNU Lesser General Public License v3.0 only",
+        "url": null
+    },
+    "downloads": 36052308,
+    "followers": 15914,
+    "categories": [
+        "optimization"
+    ],
+    "additional_categories": [],
+    "loaders": [
+        "fabric",
+        "neoforge",
+        "quilt"
+    ],
+    "versions": [
+        "EhG1mQzx",
+        "qV99i9jE"
+    ],
+    "icon_url": "https://cdn.modrinth.com/data/gvQqBUqZ/bcc8686c13af0143adf4285d741256af824f70b7_96.webp",
+    "issues_url": "https://github.com/caffeinemc/lithium-fabric/issues",
+    "source_url": "https://github.com/caffeinemc/lithium-fabric",
+    "wiki_url": null,
+    "discord_url": "https://caffeinemc.net/discord",
+    "donation_urls": [
+        {
+            "id": "patreon",
+            "platform": "Patreon",
+            "url": "https://www.patreon.com/2No2Name"
+        }
+    ],
+    "gallery": [],
+    "color": 15395571,
+    "thread_id": "gvQqBUqZ",
+    "monetization_status": "monetized"
+}
