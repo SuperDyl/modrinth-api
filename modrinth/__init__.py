@@ -36,7 +36,6 @@ from modrinth.model import (
     UserPatch,
     Version,
     VersionCreate,
-    VersionNumber,
     VersionPatch,
 )
 from modrinth.types import (
@@ -49,6 +48,7 @@ from modrinth.types import (
     MODRINTH_ID,
     MODRINTH_TEMP_ID,
     REQUESTED_PROJECT_STATUS,
+    VERSION_NUMBER,
 )
 
 
@@ -184,7 +184,8 @@ class ModrinthApi2:
         return Project.from_json(response.json())
 
     def get_projects(
-        self, project_ids: Iterable[MODRINTH_ID | MODRINTH_TEMP_ID]
+        self,
+        project_ids: Iterable[MODRINTH_ID | MODRINTH_TEMP_ID],
     ) -> list[Project]:
         """
         Gets all data for multiple projects
@@ -208,7 +209,7 @@ class ModrinthApi2:
 
     def get_random_projects(self, count: int) -> list[Project]:
         """
-        Gets all versions for the specified project.
+        Gets a random set of `count` projects.
 
         Documentation: https://docs.modrinth.com/api/operations/randomprojects/
 
@@ -227,7 +228,6 @@ class ModrinthApi2:
 
         return [Project.from_json(p) for p in response.json()]
 
-    # TODO: check if using auth does anything for this function
     def is_project_id_valid(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> bool:
         """
         Check if the project id or slug (temporary/friendly id) is valid and accessible.
@@ -235,12 +235,12 @@ class ModrinthApi2:
         If the project exists but is inaccessible to the current user,
         this will still return `False`.
 
-        Documentation: https://docs.modrinth.com/api/operations/randomprojects/
+        Documentation: https://docs.modrinth.com/api/operations/checkprojectvalidity/
 
         :param project_id: The project id or slug to test the validity of.
         :raises HTTPError: If the HTTP request to the Modrinth API fails.
         :raises RuntimeError: If a successful (200..299) status code is received but it isn't the documented 200.
-        :returns: True is the project id is valid and accessible to the current user.
+        :returns: True if the project id is valid and accessible to the current user.
         """
 
         response = requests.get(
@@ -260,12 +260,13 @@ class ModrinthApi2:
         )
 
     def get_project_dependencies(
-        self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID
+        self,
+        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
     ) -> ProjectDependencies:
         """
-        Gets all data for a project.
+        Gets data about all projects and versions that the specified project depends on.
 
-        Documentation: https://docs.modrinth.com/api/operations/getprojectversions/
+        Documentation: https://docs.modrinth.com/api/operations/getdependencies/
 
         :param project_id: The ID or slug of the project.
         :raises HTTPError: If the HTTP request to the Modrinth API fails.
@@ -274,7 +275,7 @@ class ModrinthApi2:
         """
 
         response = requests.get(
-            f"{self.api_url}/project/{project_id}",
+            f"{self.api_url}/project/{project_id}/dependencies",
             headers=self.__get_headers(),
         )
         response.raise_for_status()
@@ -365,7 +366,7 @@ class ModrinthApi2:
 
     # TODO: Figure out what the default case for `multiple` is
     def get_version_by_version_number(
-        self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID, version_number: VersionNumber
+        self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID, version_number: VERSION_NUMBER
     ) -> Version:
         """
         Gets data for a specific project version by version number.
@@ -382,7 +383,7 @@ class ModrinthApi2:
         """
 
         response = requests.get(
-            f"{self.api_url}/project/{project_id}/version/{str(version_number)}",
+            f"{self.api_url}/project/{project_id}/version/{version_number}",
             headers=self.__get_headers(),
         )
         response.raise_for_status()

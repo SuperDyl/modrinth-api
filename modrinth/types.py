@@ -153,3 +153,19 @@ PROJECT_TYPE = Literal["mod", "modpack", "resourcepack", "shader", "plugin", "da
 """
 The types of projects available on Modrinth.
 """
+
+VERSION_NUMBER = str
+"""
+A semantic version number.
+
+The semantic version is usually major.minor.patch,
+but modrinth allows mixed values.
+Some examples:
+
+- 1.3.12
+- v1.2.4
+- mc1.21.8-0.18.0-fabric
+
+See https://en.wikipedia.org/wiki/Software_versioning#Semantic_versioning
+and https://docs.modrinth.com/api/operations/getversionfromidornumber/
+"""

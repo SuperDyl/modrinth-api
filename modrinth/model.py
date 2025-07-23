@@ -21,44 +21,12 @@ from modrinth.types import (
     SHA512_HASH,
     SUPPORT,
     SVG,
+    VERSION_NUMBER,
     VERSION_STATUS,
     VERSION_TYPE,
 )
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-
-
-@dataclass
-class VersionNumber:
-    """
-    A semantic version number.
-
-    The semantic version is essentially major.minor.patch.
-    See https://en.wikipedia.org/wiki/Software_versioning#Semantic_versioning
-    and https://docs.modrinth.com/api/operations/getversionfromidornumber/
-    """
-
-    major: int
-    minor: int
-    patch: int
-
-    @classmethod
-    def from_version_number_str(cls, version_number_str: str) -> "VersionNumber":
-        major, minor, patch = version_number_str.split(".")
-
-        return VersionNumber(
-            major=int(major),
-            minor=int(minor),
-            patch=int(patch),
-        )
-
-    def __str__(self) -> str:
-        return f"{self.major}.{self.minor}.{self.patch}"
-
-    def __repr__(self) -> str:
-        return (
-            f"VersionNumber(major={self.major}, minor={self.minor}, patch={self.patch})"
-        )
 
 
 @dataclass
@@ -189,7 +157,7 @@ class Version:
     """
 
     name: str
-    version_number: VersionNumber
+    version_number: VERSION_NUMBER
     changelog: str | None
     dependencies: list[VersionDependency]
     game_versions: list[GAME_VERSION]
@@ -214,9 +182,7 @@ class Version:
         """
         return Version(
             name=json_["name"],
-            version_number=VersionNumber.from_version_number_str(
-                json_["version_number"]
-            ),
+            version_number=json_["version_number"],
             changelog=json_.get("changelog"),
             dependencies=[
                 VersionDependency.from_json(x) for x in json_["dependencies"]
@@ -242,7 +208,7 @@ class Version:
         """
         return {
             "name": self.name,
-            "version_number": str(self.version_number),
+            "version_number": self.version_number,
             "changelog": self.changelog,
             "dependencies": [d.to_json() for d in self.dependencies],
             "game_versions": self.game_versions,
@@ -319,7 +285,7 @@ class VersionCreate:
     """
 
     name: str | Empty
-    version_number: VersionNumber | Empty
+    version_number: VERSION_NUMBER | Empty
     changelog: str | None | Empty
     dependencies: list[VersionDependencyCreate] | Empty
     game_versions: list[GAME_VERSION] | Empty
@@ -338,16 +304,13 @@ class VersionCreate:
         :param json_: The dictionary containing the same keys expected by `VersionCreate`
         :raise KeyError: If any required values for `VersionCreate` are not defined.
         """
-        version_number: VersionNumber | Empty = EMPTY
-        if x := json_.get("version_number", EMPTY) != EMPTY:
-            version_number = VersionNumber.from_version_number_str(x)
         dependencies: list[VersionDependencyCreate] | Empty = EMPTY
         if x := json_.get("dependencies", EMPTY) != EMPTY:
             dependencies = [VersionDependencyCreate.from_json(d) for d in x]
 
         return VersionCreate(
             name=json_.get("name", EMPTY),
-            version_number=version_number,
+            version_number=json_.get("version_number", EMPTY),
             changelog=json_.get("changelog", EMPTY),
             dependencies=dependencies,
             game_versions=json_.get("game_versions", EMPTY),
@@ -374,7 +337,7 @@ class VersionCreate:
         if not isinstance(self.name, Empty):
             output["name"] = self.name
         if not isinstance(self.version_number, Empty):
-            output["version_number"] = str(self.version_number)
+            output["version_number"] = self.version_number
         if not isinstance(self.changelog, Empty):
             output["changelog"] = self.changelog
         if not isinstance(self.dependencies, Empty):
@@ -482,7 +445,7 @@ class VersionPatch:
     """
 
     name: str | Empty
-    version_number: VersionNumber | Empty
+    version_number: VERSION_NUMBER | Empty
     changelog: str | None | Empty
     dependencies: list[VersionDependency] | Empty
     game_versions: list[GAME_VERSION] | Empty
@@ -500,10 +463,6 @@ class VersionPatch:
         :param json_: The dictionary containing the same keys expected by `VersionPatch`
         :raise KeyError: If any required values for `VersionPatch` are not defined.
         """
-        version_number: VersionNumber | Empty = EMPTY
-        if x := json_.get("version_number", EMPTY) != EMPTY:
-            version_number = VersionNumber.from_version_number_str(x)
-
         dependencies: list[VersionDependency] | Empty = EMPTY
         if x := json_.get("dependencies", EMPTY) != EMPTY:
             dependencies = [VersionDependency.from_json(vd) for vd in x]
@@ -518,7 +477,7 @@ class VersionPatch:
 
         return VersionPatch(
             name=json_.get("name", EMPTY),
-            version_number=version_number,
+            version_number=json_.get("version_number", EMPTY),
             changelog=json_.get("changelog"),
             dependencies=dependencies,
             game_versions=json_.get("game_versions", EMPTY),
@@ -540,7 +499,7 @@ class VersionPatch:
         if not isinstance(self.name, Empty):
             output["name"] = self.name
         if not isinstance(self.version_number, Empty):
-            output["version_number"] = str(self.version_number)
+            output["version_number"] = self.version_number
         if not isinstance(self.changelog, Empty):
             output["changelog"] = self.changelog
         if not isinstance(self.dependencies, Empty):
