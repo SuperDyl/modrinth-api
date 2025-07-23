@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from enum import auto, StrEnum
+from enum import StrEnum
 from functools import cache
 import os
 from typing import Callable, Generator
@@ -12,23 +12,17 @@ RESPONSE_DIR = "tests/responses"
 
 
 class ResponseFiles(StrEnum):
-    GET_PROJECT_LEDGER = auto()
-    GET_PROJECT_TAG_GAME = auto()
-    GET_PROJECTS = auto()
-
-
-files: dict[str, str] = {
-    ResponseFiles.GET_PROJECT_LEDGER: "get-project-ledger.json",
-    ResponseFiles.GET_PROJECT_TAG_GAME: "get-project-tag-game.json",
-    ResponseFiles.GET_PROJECTS: "get-projects.json",
-}
+    GET_PROJECT_LITHIUM = "get-project-lithium.json"
+    GET_PROJECT_TAG_GAME = "get-project-tag-game.json"
+    GET_PROJECTS = "get-projects.json"
+    GET_RANDOM_PROJECTS = "get-random-projects.json"
+    GET_PROJECT_DEPENDENCIES_LEDGER = "get-project-dependencies-ledger.json"
 
 
 @cache
 def get_response(response_file: ResponseFiles) -> str:
-    file_name = files[response_file]
 
-    with open(f"{RESPONSE_DIR}/{file_name}", "r") as file:
+    with open(f"{RESPONSE_DIR}/{response_file}", "r") as file:
         return file.read()
 
 
@@ -43,9 +37,7 @@ def capture_request(response_file: str) -> Generator:
     def capture(__method: Callable, *args, **kwargs) -> Response:
         response: Response = __method(*args, **kwargs)
 
-        response_path = files[response_file]
-
-        with open(f"{RESPONSE_DIR}/{response_path}", "w") as file:
+        with open(f"{RESPONSE_DIR}/{response_file}", "w") as file:
             file.write(response.content.decode())
 
         return response
@@ -85,7 +77,8 @@ def capture_request(response_file: str) -> Generator:
 
 
 def cached_capture(response_file: ResponseFiles, request: Callable) -> str:
-    if not os.path.isfile(f"{RESPONSE_DIR}/{response_file}"):
+
+    if not os.path.exists(f"{RESPONSE_DIR}/{response_file}"):
         with capture_request(response_file):
             request()
     return get_response(response_file)
