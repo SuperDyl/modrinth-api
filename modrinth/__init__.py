@@ -1868,16 +1868,16 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         :param closed: Whether the report should be closed or not.
         :raises HTTPError: If the HTTP request to the Modrinth API fails.
         """
-        data: dict = {}
+        payload: dict = {}
         if body is not None:
-            data["body"] = body
+            payload["body"] = body
         if closed is not None:
-            data["closed"] = "true" if closed else "false"
+            payload["closed"] = "true" if closed else "false"
 
         response = requests.patch(
             f"{self.api_url}/report/{report_id}",
             headers=self.__get_headers(),
-            json=data,
+            json=payload,
         )
         response.raise_for_status()
 
@@ -2080,20 +2080,20 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         :raises HTTPError: If the HTTP request to the Modrinth API fails.
         """
 
-        data: dict = {}
+        payload: dict = {}
         if role is not None:
-            data["role"] = role
+            payload["role"] = role
         if permissions is not None:
-            data["permissions"] = permissions
+            payload["permissions"] = permissions
         if payouts_split is not None:
-            data["payouts_split"] = payouts_split
+            payload["payouts_split"] = payouts_split
         if ordering is not None:
-            data["ordering"] = ordering
+            payload["ordering"] = ordering
 
         response = requests.patch(
             f"{self.api_url}/team/{team_id}/members/{user_id}",
             headers=self.__get_headers(),
-            json=data,
+            json=payload,
         )
         response.raise_for_status()
 
