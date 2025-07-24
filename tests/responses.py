@@ -17,6 +17,15 @@ class ResponseFiles(StrEnum):
     GET_PROJECTS = "get-projects.json"
     GET_RANDOM_PROJECTS = "get-random-projects.json"
     GET_PROJECT_DEPENDENCIES_LEDGER = "get-project-dependencies-ledger.json"
+    GET_PROJECT_VERSIONS_LITHIUM = "get-project-versions-lithium.json"
+    GET_PROJECT_VERSIONS_LITHIUM_FILTERED = "get-project-versions-lithium-filtered.json"
+    GET_VERSION_LITHIUM = "get-version-lithium.json"
+    GET_VERSION_BY_ID_LITHIUM = "get-version-by-id-lithium.json"
+    GET_VERSION_BY_NUMBER_LITHIUM = "get-version-by-number-lithium.json"
+    GET_VERSIONS = "get-versions.json"
+    GET_VERSION_FROM_HASH_SHA1 = "get-version-from-hash-sha1.json"
+    GET_VERSIONS_FROM_HASH_SINGULAR_SHA512 = "get-versions-from-hash-singular-sha512.json"
+    GET_VERSIONS_FROM_HASH_MULTIPLE_SHA512 = "get-versions-from-hash-multiple-sha512.json"
 
 
 @cache

@@ -1,0 +1,35 @@
+{
+    "game_versions": [
+        "1.18"
+    ],
+    "loaders": [
+        "fabric"
+    ],
+    "id": "2w527DB2",
+    "project_id": "gvQqBUqZ",
+    "author_id": "uhPSqlnd",
+    "featured": false,
+    "name": "Lithium 0.7.6-rc1",
+    "version_number": "mc1.18-0.7.6-rc1",
+    "changelog": "This is the first release candidate of Lithium for Minecraft 1.18. It is missing many of the old optimizations which haven't been ported to 1.18 yet. Also parity with changes introduced in Minecraft 1.18 hasn't been well tested.\nExpect bugs and **backup the world before testing** this version.\n\n## Additions\n\n## Changes\n- change: update some patches to Minecraft 1.18\n- change: remove lots of patches that are incompatible with Minecraft 1.18\n\nThe changelog is available on GitHub right [here](https://github.com/CaffeineMC/lithium-fabric/releases/tag/mc1.18-0.7.6-rc1)",
+    "changelog_url": null,
+    "date_published": "2021-12-05T08:29:57.358379Z",
+    "downloads": 20758,
+    "version_type": "beta",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+        {
+            "hashes": {
+                "sha512": "2396efef36aa280092479d10007be5de6589113cc10b57cf658fa85fc30f3135e0ef2c9172b55ed35ffb38553430795876db17fbd005aedcbf1105ca626a7594",
+                "sha1": "2190e753bdd33f48213ef5085908a9470622cbf0"
+            },
+            "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.18-0.7.6-rc1/lithium-fabric-mc1.18-0.7.6-rc1.jar",
+            "filename": "lithium-fabric-mc1.18-0.7.6-rc1.jar",
+            "primary": false,
+            "size": 385473,
+            "file_type": null
+        }
+    ],
+    "dependencies": []
+}

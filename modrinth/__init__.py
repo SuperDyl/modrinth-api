@@ -310,7 +310,7 @@ class ModrinthApi2:
         if game_versions is not None:
             filters["game_versions"] = json.dumps(tuple(game_versions))
         if featured is not None:
-            filters["featured"] = featured
+            filters["featured"] = "true" if featured else "false"
 
         response = requests.get(
             f"{self.api_url}/project/{project_id}/version",
@@ -342,10 +342,14 @@ class ModrinthApi2:
         return Version.from_json(response.json())
 
     def get_version_by_version_id(
-        self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID, version_id: MODRINTH_ID
+        self,
+        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        version_id: MODRINTH_ID,
     ) -> Version:
         """
         Gets data for a specific project version by version id.
+
+        This specific option is redundant as `get_version()` exists.
 
         Documentation: https://docs.modrinth.com/api/operations/getversion/
 
@@ -364,9 +368,10 @@ class ModrinthApi2:
 
         return Version.from_json(response.json())
 
-    # TODO: Figure out what the default case for `multiple` is
     def get_version_by_version_number(
-        self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID, version_number: VERSION_NUMBER
+        self,
+        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        version_number: VERSION_NUMBER,
     ) -> Version:
         """
         Gets data for a specific project version by version number.
@@ -1212,7 +1217,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         }
 
         if featured is not None:
-            params["featured"] = featured
+            params["featured"] = "true" if featured else "false"
 
         if title is not None:
             params["title"] = title
@@ -1866,7 +1871,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         if body is not None:
             data["body"] = body
         if closed is not None:
-            data["closed"] = closed
+            data["closed"] = "true" if closed else "false"
 
         response = requests.patch(
             f"{self.api_url}/report/{report_id}",

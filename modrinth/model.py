@@ -1107,7 +1107,7 @@ class Project:
     color: Color | None
     thread_id: MODRINTH_ID
     monetization_status: Literal["monetized", "demonetized", "force-demonetized"]
-    organization: MODRINTH_ID
+    organization: MODRINTH_ID | None
     id: MODRINTH_ID
     team: MODRINTH_ID
     body_url: None
@@ -1159,7 +1159,7 @@ class Project:
             color=None if color_rgb_int is None else Color.from_rgb_int(color_rgb_int),
             thread_id=json_["thread_id"],
             monetization_status=json_["monetization_status"],
-            organization=json_["organization"],
+            organization=json_.get("organization"),
             id=json_["id"],
             team=json_["team"],
             body_url=json_.get("body_url"),

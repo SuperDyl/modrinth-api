@@ -1,0 +1,35 @@
+{
+    "game_versions": [
+        "1.16.4"
+    ],
+    "loaders": [
+        "fabric"
+    ],
+    "id": "EhG1mQzx",
+    "project_id": "gvQqBUqZ",
+    "author_id": "TEZXhE2U",
+    "featured": false,
+    "name": "Lithium 0.6.0",
+    "version_number": "mc1.16.4-0.6.0",
+    "changelog": "",
+    "changelog_url": null,
+    "date_published": "2021-01-03T00:56:52.295118Z",
+    "downloads": 2051,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+        {
+            "hashes": {
+                "sha1": "6ab1c5adc97ab0c66f9c9afcdb1d143a607db82c",
+                "sha512": "6c962b28c3fe73b249255b795776c553df6e42f726a18fb877e0034788589b7a8e26b74aa38de7ba67b535bdf49b8e35a4ba8f041e85e61406f348d6a4f898b5"
+            },
+            "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.16.4-0.6.0/lithium-fabric-mc1.16.4-0.6.0.jar",
+            "filename": "lithium-fabric-mc1.16.4-0.6.0.jar",
+            "primary": false,
+            "size": 287987,
+            "file_type": null
+        }
+    ],
+    "dependencies": []
+}

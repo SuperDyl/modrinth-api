@@ -1,0 +1,282 @@
+[
+    {
+        "game_versions": [
+            "1.18.2"
+        ],
+        "loaders": [
+            "fabric"
+        ],
+        "id": "ALnv7Npy",
+        "project_id": "gvQqBUqZ",
+        "author_id": "uhPSqlnd",
+        "featured": false,
+        "name": "Lithium 0.10.3",
+        "version_number": "mc1.18.2-0.10.3",
+        "changelog": "This release is a backport for 1.18.2. Changes from 0.10.2 backport:\n\n## Fixes\n- fix: block.hopper: hoppers not reacting when placing/breaking inventories without block updates\n- fix: block.hopper: hopper not notified about inventory changes anymore after placing comparator next to output inventory of hopper\n- fix: world.tick_scheduler: chunk tick scheduler peek returning wrong scheduled tick in some cases leading to wrong ticking order\n- fix: world.tick_scheduler: chunk tick scheduler broken after loading a structure block\n\nYou can support me on patreon: https://www.patreon.com/2No2Name",
+        "changelog_url": null,
+        "date_published": "2022-12-07T19:58:56.517220Z",
+        "downloads": 357192,
+        "version_type": "release",
+        "status": "listed",
+        "requested_status": null,
+        "files": [
+            {
+                "hashes": {
+                    "sha1": "d47d223403bbc4d14748141cdddc4beeb451fe4e",
+                    "sha512": "46d4cdaf627a20c61fbbbc055d6fbfc422b851d94288b6dd2296fc958c6b32d4d6955bc678e7b9ea9ae69f4a4a54e7b822c164fee849c9b5c7cde0c1c1595413"
+                },
+                "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/ALnv7Npy/lithium-fabric-mc1.18.2-0.10.3.jar",
+                "filename": "lithium-fabric-mc1.18.2-0.10.3.jar",
+                "primary": true,
+                "size": 555165,
+                "file_type": null
+            }
+        ],
+        "dependencies": []
+    },
+    {
+        "game_versions": [
+            "1.18.2"
+        ],
+        "loaders": [
+            "fabric"
+        ],
+        "id": "FXG2XqRP",
+        "project_id": "gvQqBUqZ",
+        "author_id": "uhPSqlnd",
+        "featured": false,
+        "name": "Lithium 0.10.2",
+        "version_number": "mc1.18.2-0.10.2",
+        "changelog": "This release is a backport for 1.18.2 from Lithium 0.10.2 for 1.19.2. The previous release for 1.18.2 was Lithium 0.7.10 . This backport includes many new optimizations, bugfixes and new bugs. For a list of changes, check out the changelogs of the versions 0.8 and above:\n\n## Changelogs\n- https://github.com/CaffeineMC/lithium-fabric/releases?q=0.8+OR+0.9+OR+0.10&expanded=true\n\nYou can support me on patreon: https://www.patreon.com/2No2Name\n",
+        "changelog_url": null,
+        "date_published": "2022-11-11T20:39:53.633826Z",
+        "downloads": 24261,
+        "version_type": "release",
+        "status": "listed",
+        "requested_status": null,
+        "files": [
+            {
+                "hashes": {
+                    "sha512": "6f21f2f99533819be6a955593beab89149d64344bf2414eb96081dbb0b3462d2512d411d10d4e05045f317efced30102c4bb53ee4bed14ff4858fb065f18a710",
+                    "sha1": "ddb9874625d8e091b1d88d699f9364b33237af55"
+                },
+                "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/FXG2XqRP/lithium-fabric-mc1.18.2-0.10.2.jar",
+                "filename": "lithium-fabric-mc1.18.2-0.10.2.jar",
+                "primary": true,
+                "size": 548923,
+                "file_type": null
+            }
+        ],
+        "dependencies": []
+    },
+    {
+        "game_versions": [
+            "1.18.2"
+        ],
+        "loaders": [
+            "fabric"
+        ],
+        "id": "pHl1Vi6k",
+        "project_id": "gvQqBUqZ",
+        "author_id": "uhPSqlnd",
+        "featured": false,
+        "name": "Lithium 0.7.10",
+        "version_number": "mc1.18.2-0.7.10",
+        "changelog": "The changelog is available on GitHub right [here](https://github.com/CaffeineMC/lithium-fabric/releases/tag/mc1.18.2-0.7.10).",
+        "changelog_url": null,
+        "date_published": "2022-05-22T13:03:05.021365Z",
+        "downloads": 154327,
+        "version_type": "release",
+        "status": "listed",
+        "requested_status": null,
+        "files": [
+            {
+                "hashes": {
+                    "sha1": "d5c19c3d4edb4228652adcc8abb94f9bd80a634c",
+                    "sha512": "05f0e51191c9051224c791d63ad4b7915e6f3c442e5d38225e7b05ea4261ee459edb3d8ce99411e1a5a854547549845f21cc8ee2f0079281fec999c1d319fb07"
+                },
+                "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.18.2-0.7.10/lithium-fabric-mc1.18.2-0.7.10.jar",
+                "filename": "lithium-fabric-mc1.18.2-0.7.10.jar",
+                "primary": true,
+                "size": 466196,
+                "file_type": null
+            }
+        ],
+        "dependencies": []
+    },
+    {
+        "game_versions": [
+            "1.18.2"
+        ],
+        "loaders": [
+            "fabric"
+        ],
+        "id": "MoF1cn6g",
+        "project_id": "gvQqBUqZ",
+        "author_id": "uhPSqlnd",
+        "featured": false,
+        "name": "Lithium 0.7.9",
+        "version_number": "mc1.18.2-0.7.9",
+        "changelog": "The changelog is available on GitHub right [here](https://github.com/CaffeineMC/lithium-fabric/releases/tag/mc1.18.2-0.7.9).",
+        "changelog_url": null,
+        "date_published": "2022-03-02T22:33:09.684980Z",
+        "downloads": 91565,
+        "version_type": "release",
+        "status": "listed",
+        "requested_status": null,
+        "files": [
+            {
+                "hashes": {
+                    "sha512": "6c2128734a7e49301e49f394b62c4995aaed3cdd88fd20f7dd265db3dbafb6c5bb193e9705d5533585ee397ed713aaedfb843b05be2c4c7dd90a86321c2e8cfc",
+                    "sha1": "2f0298476ba54e8fc640c9bfe132a193db45b92b"
+                },
+                "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.18.2-0.7.9/lithium-fabric-mc1.18.2-0.7.9.jar",
+                "filename": "lithium-fabric-mc1.18.2-0.7.9.jar",
+                "primary": true,
+                "size": 443704,
+                "file_type": null
+            }
+        ],
+        "dependencies": []
+    },
+    {
+        "game_versions": [
+            "1.18.1"
+        ],
+        "loaders": [
+            "fabric"
+        ],
+        "id": "Ehsd7YUl",
+        "project_id": "gvQqBUqZ",
+        "author_id": "uhPSqlnd",
+        "featured": false,
+        "name": "Lithium 0.7.8",
+        "version_number": "mc1.18.1-0.7.8",
+        "changelog": "The changelog is available on GitHub right [here](https://github.com/CaffeineMC/lithium-fabric/releases/tag/mc1.18.1-0.7.8).",
+        "changelog_url": null,
+        "date_published": "2022-02-23T17:24:44.610153Z",
+        "downloads": 26608,
+        "version_type": "release",
+        "status": "listed",
+        "requested_status": null,
+        "files": [
+            {
+                "hashes": {
+                    "sha1": "8b7cd216fee54b9acc261005cae5acbc856b1933",
+                    "sha512": "21e6c5cbea05e2ebe05b09167b2c7613d441ff5c013560d07921a6a127a82e5573261d5c400c71955a40d52d94941fb816c33f59055a93e1854fed48701dde23"
+                },
+                "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.18.1-0.7.8/lithium-fabric-mc1.18.1-0.7.8.jar",
+                "filename": "lithium-fabric-mc1.18.1-0.7.8.jar",
+                "primary": true,
+                "size": 449519,
+                "file_type": null
+            }
+        ],
+        "dependencies": []
+    },
+    {
+        "game_versions": [
+            "1.18.1"
+        ],
+        "loaders": [
+            "fabric"
+        ],
+        "id": "2aoHIXuK",
+        "project_id": "gvQqBUqZ",
+        "author_id": "uhPSqlnd",
+        "featured": false,
+        "name": "Lithium 0.7.7",
+        "version_number": "mc1.18.1-0.7.7",
+        "changelog": "The changelog is available on GitHub right [here](https://github.com/CaffeineMC/lithium-fabric/releases/tag/mc1.18.1-0.7.7).",
+        "changelog_url": null,
+        "date_published": "2022-01-02T12:00:50.953696Z",
+        "downloads": 12493,
+        "version_type": "release",
+        "status": "listed",
+        "requested_status": null,
+        "files": [
+            {
+                "hashes": {
+                    "sha1": "8eaffcb994e67ac7b3fd2efa526f7721f8327d11",
+                    "sha512": "638d259abebb622cc5e5ca905dc7361b5a0740f1c37ec827a0094dc03b7c3e83288217bfd4d17a20018d0237049674b014d62b4693b9af920b393ba37dad79fe"
+                },
+                "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.18.1-0.7.7/lithium-fabric-mc1.18.1-0.7.7.jar",
+                "filename": "lithium-fabric-mc1.18.1-0.7.7.jar",
+                "primary": false,
+                "size": 391313,
+                "file_type": null
+            }
+        ],
+        "dependencies": []
+    },
+    {
+        "game_versions": [
+            "1.18.1"
+        ],
+        "loaders": [
+            "fabric"
+        ],
+        "id": "2CbyxeU0",
+        "project_id": "gvQqBUqZ",
+        "author_id": "uhPSqlnd",
+        "featured": false,
+        "name": "Lithium 0.7.6",
+        "version_number": "mc1.18.1-0.7.6",
+        "changelog": "The changelog is available on GitHub right [here](https://github.com/CaffeineMC/lithium-fabric/releases/tag/mc1.18.1-0.7.6).",
+        "changelog_url": null,
+        "date_published": "2021-12-13T21:06:50.839240Z",
+        "downloads": 6980,
+        "version_type": "release",
+        "status": "listed",
+        "requested_status": null,
+        "files": [
+            {
+                "hashes": {
+                    "sha512": "91b4de272f708e47e86a74068031627fd41f27ea57bc8ad5e68957bc5e9d4401f486cb969434e6022b708d67729be784c4d39395ea2896db5ad6ac90241d5baa",
+                    "sha1": "90c9399eaf16d56c0312c72c9f3697f0cded6416"
+                },
+                "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.18.1-0.7.6/lithium-fabric-mc1.18.1-0.7.6.jar",
+                "filename": "lithium-fabric-mc1.18.1-0.7.6.jar",
+                "primary": false,
+                "size": 387086,
+                "file_type": null
+            }
+        ],
+        "dependencies": []
+    },
+    {
+        "game_versions": [
+            "1.18"
+        ],
+        "loaders": [
+            "fabric"
+        ],
+        "id": "2w527DB2",
+        "project_id": "gvQqBUqZ",
+        "author_id": "uhPSqlnd",
+        "featured": false,
+        "name": "Lithium 0.7.6-rc1",
+        "version_number": "mc1.18-0.7.6-rc1",
+        "changelog": "This is the first release candidate of Lithium for Minecraft 1.18. It is missing many of the old optimizations which haven't been ported to 1.18 yet. Also parity with changes introduced in Minecraft 1.18 hasn't been well tested.\nExpect bugs and **backup the world before testing** this version.\n\n## Additions\n\n## Changes\n- change: update some patches to Minecraft 1.18\n- change: remove lots of patches that are incompatible with Minecraft 1.18\n\nThe changelog is available on GitHub right [here](https://github.com/CaffeineMC/lithium-fabric/releases/tag/mc1.18-0.7.6-rc1)",
+        "changelog_url": null,
+        "date_published": "2021-12-05T08:29:57.358379Z",
+        "downloads": 20758,
+        "version_type": "beta",
+        "status": "listed",
+        "requested_status": null,
+        "files": [
+            {
+                "hashes": {
+                    "sha512": "2396efef36aa280092479d10007be5de6589113cc10b57cf658fa85fc30f3135e0ef2c9172b55ed35ffb38553430795876db17fbd005aedcbf1105ca626a7594",
+                    "sha1": "2190e753bdd33f48213ef5085908a9470622cbf0"
+                },
+                "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/mc1.18-0.7.6-rc1/lithium-fabric-mc1.18-0.7.6-rc1.jar",
+                "filename": "lithium-fabric-mc1.18-0.7.6-rc1.jar",
+                "primary": false,
+                "size": 385473,
+                "file_type": null
+            }
+        ],
+        "dependencies": []
+    }
+]
