@@ -1,0 +1,36 @@
+[
+    {
+        "id": "TEZXhE2U",
+        "username": "jellysquid3",
+        "name": null,
+        "avatar_url": "https://cdn.modrinth.com/user/TEZXhE2U/f4705a5f2388c65029ae2e59f1434b3e6e4de23a.png",
+        "bio": "Professional idiot at day, maniac programmer by night.",
+        "created": "2021-01-03T00:49:18.373336Z",
+        "role": "developer",
+        "badges": 0,
+        "auth_providers": null,
+        "email": null,
+        "email_verified": null,
+        "has_password": null,
+        "has_totp": null,
+        "payout_data": null,
+        "github_id": null
+    },
+    {
+        "id": "iA8ISxSN",
+        "username": "SuperDyl",
+        "name": null,
+        "avatar_url": "https://cdn.modrinth.com/data/iA8ISxSN/6dd53b4902dcdeb32b5f6fe640a4da988be8963e_96.webp",
+        "bio": "I've had a long-time interest in data packs. I make data packs I wish I could just download for my server.",
+        "created": "2024-07-04T20:51:13.175337Z",
+        "role": "developer",
+        "badges": 0,
+        "auth_providers": null,
+        "email": null,
+        "email_verified": null,
+        "has_password": null,
+        "has_totp": null,
+        "payout_data": null,
+        "github_id": null
+    }
+]

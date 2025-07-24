@@ -1,7 +1,8 @@
+import os
+
 from contextlib import contextmanager
 from enum import StrEnum
 from functools import cache
-import os
 from typing import Callable, Generator
 from unittest.mock import patch
 
@@ -34,6 +35,15 @@ class ResponseFiles(StrEnum):
     GET_VERSIONS_FROM_HASHES_SHA1 = "get-versions-from-hashes-sha1.json"
     GET_LATEST_VERSIONS = "get-latest-versions.json"
     GET_USER = "get-user.json"
+    GET_USERS = "get-users.json"
+    GET_PROJECTS_BY_USER = "get-projects-by-user.json"
+    GET_PROJECT_TEAM_MEMBERS = "get-project-team-members.json"
+    GET_TEAM_MEMBERS_TEAMS = "get-team-members-teams.json"
+    GET_CATEGORIES = "get-categories.json"
+    GET_LOADERS = "get-loaders.json"
+    GET_GAME_VERSIONS = "get-game-versions.json"
+    GET_DEPRECATED_LICENSES = "get-deprecated-licenses.json"
+    GET_LICENSE = "get-license.json"
 
 
 used_files: set[ResponseFiles] = set()
@@ -42,16 +52,12 @@ used_files: set[ResponseFiles] = set()
 @cache
 def get_response(response_file: ResponseFiles) -> str:
 
-    if response_file in used_files:
-        raise ValueError(f"Reused response file '{response_file}'")
-    used_files.add(response_file)
-
     with open(f"{RESPONSE_DIR}/{response_file}", "r") as file:
         return file.read()
 
 
 @contextmanager
-def capture_request(response_file: str) -> Generator:
+def capture_request(response_file: str) -> Generator[None]:
 
     _delete = requests.delete
     _get = requests.get
@@ -101,6 +107,10 @@ def capture_request(response_file: str) -> Generator:
 
 
 def cached_capture(response_file: ResponseFiles, request: Callable) -> str:
+
+    if response_file in used_files:
+        raise ValueError(f"Reused response file '{response_file}'")
+    used_files.add(response_file)
 
     if not os.path.exists(f"{RESPONSE_DIR}/{response_file}"):
         with capture_request(response_file):

@@ -27,6 +27,7 @@ from modrinth.types import (
 )
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+GAME_DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 
 @dataclass
@@ -1858,8 +1859,7 @@ class Loader:
 
     icon: SVG
     name: str
-    project_type: PROJECT_TYPE
-    header: str
+    supported_project_types: list[PROJECT_TYPE]
 
     @classmethod
     def from_json(cls, json_: dict) -> "Loader":
@@ -1867,13 +1867,11 @@ class Loader:
         :param json_: The dictionary containing the same keys expected by `Loader`
         :raise KeyError: If any required values for `Loader` are not defined.
         """
-        permissions = json_.get("permissions")
 
         return Loader(
             icon=json_["icon"],
             name=json_["name"],
-            project_type=json_["project_type"],
-            header=json_["header"],
+            supported_project_types=json_["supported_project_types"],
         )
 
     def to_json(self) -> dict:
@@ -1883,8 +1881,7 @@ class Loader:
         return {
             "icon": self.icon,
             "name": self.name,
-            "project_type": self.project_type,
-            "header": self.header,
+            "supported_project_types": self.supported_project_types,
         }
 
 
@@ -1921,7 +1918,7 @@ class GameVersion:
         return {
             "version": self.version,
             "version_type": self.version_type,
-            "date": self.date.strftime(DATE_FORMAT),
+            "date": self.date.strftime(GAME_DATE_FORMAT),
             "major": self.major,
         }
 
@@ -1957,6 +1954,38 @@ class DeprecatedLicense:
         return {
             "short": self.short,
             "name": self.name,
+        }
+
+
+@dataclass
+class LicenseText:
+    """
+    The text and title of a license.
+
+    Documentation: https://docs.modrinth.com/api/operations/licensetext/#responses
+    """
+
+    title: str
+    body: str
+
+    @classmethod
+    def from_json(cls, json_: dict) -> "LicenseText":
+        """
+        :param json_: The dictionary containing the same keys expected by `LicenseText`
+        :raise KeyError: If any required values for `LicenseText` are not defined.
+        """
+        return LicenseText(
+            title=json_["title"],
+            body=json_["body"],
+        )
+
+    def to_json(self) -> dict:
+        """
+        Convert back into a dictionary representation of a JSON `LicenseText` object.
+        """
+        return {
+            "title": self.title,
+            "body": self.body,
         }
 
 

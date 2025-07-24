@@ -1,5 +1,7 @@
 import json
 import unittest
+
+from contextlib import redirect_stderr
 from unittest.mock import patch
 
 import requests
@@ -7,7 +9,18 @@ from requests import Response
 
 from responses import cached_capture, ResponseFiles
 from modrinth import ModrinthApi2
-from modrinth.model import Project, ProjectDependencies, User, Version
+from modrinth.model import (
+    Category,
+    DeprecatedLicense,
+    GameVersion,
+    LicenseText,
+    Loader,
+    Project,
+    ProjectDependencies,
+    TeamMember,
+    User,
+    Version,
+)
 from modrinth.types import MODRINTH_ID, SHA1_HASH, SHA512_HASH
 
 LITHIUM_PROJECT_ID: MODRINTH_ID = "gvQqBUqZ"
@@ -312,6 +325,124 @@ class TestGetMethods(unittest.TestCase):
 
         user = User.from_json(expected_json)
         parsed_back = user.to_json()
+
+        self.assertDictEqual(expected_json, parsed_back)
+
+    def test_get_users(self) -> None:
+        expected_json: list = json.loads(
+            cached_capture(
+                ResponseFiles.GET_USERS,
+                lambda: self.api.get_users(["superdyl", "jellysquid3"]),
+            )
+        )
+
+        users = [User.from_json(u) for u in expected_json]
+        parsed_back = [u.to_json() for u in users]
+
+        self.assertListEqual(expected_json, parsed_back)
+
+    def test_get_projects_by_user(self) -> None:
+        expected_json: list = json.loads(
+            cached_capture(
+                ResponseFiles.GET_PROJECTS_BY_USER,
+                lambda: self.api.get_projects_by_user("superdyl"),
+            )
+        )
+
+        projects = [Project.from_json(p) for p in expected_json]
+        parsed_back = [p.to_json() for p in projects]
+
+        self.assertListEqual(expected_json, parsed_back)
+
+    def test_get_team_members_of_project(self) -> None:
+        expected_json: list = json.loads(
+            cached_capture(
+                ResponseFiles.GET_PROJECT_TEAM_MEMBERS,
+                lambda: self.api.get_team_members_of_project(LITHIUM_PROJECT_ID),
+            )
+        )
+
+        team_members = [TeamMember.from_json(t) for t in expected_json]
+        parsed_back = [t.to_json() for t in team_members]
+
+        self.assertListEqual(expected_json, parsed_back)
+
+    def test_get_team_members_teams(self) -> None:
+        expected_json: list[list] = json.loads(
+            cached_capture(
+                ResponseFiles.GET_TEAM_MEMBERS_TEAMS,
+                lambda: self.api.get_team_members_teams(["tn8Zu9Q7", "BZoBsPo6"]),
+            )
+        )
+
+        teams = [[TeamMember.from_json(tm) for tm in team] for team in expected_json]
+        parsed_back = [[tm.to_json() for tm in team] for team in teams]
+
+        self.assertListEqual(expected_json, parsed_back)
+
+    def test_get_categories(self) -> None:
+        expected_json: list = json.loads(
+            cached_capture(
+                ResponseFiles.GET_CATEGORIES,
+                lambda: self.api.get_categories(),
+            )
+        )
+
+        categories = [Category.from_json(c) for c in expected_json]
+        parsed_back = [c.to_json() for c in categories]
+
+        self.assertListEqual(expected_json, parsed_back)
+
+    def test_get_loaders(self) -> None:
+        expected_json: list = json.loads(
+            cached_capture(
+                ResponseFiles.GET_LOADERS,
+                lambda: self.api.get_loaders(),
+            )
+        )
+
+        loaders = [Loader.from_json(l) for l in expected_json]
+        parsed_back = [l.to_json() for l in loaders]
+
+        self.assertListEqual(expected_json, parsed_back)
+
+    def test_get_game_versions(self) -> None:
+        expected_json: list = json.loads(
+            cached_capture(
+                ResponseFiles.GET_GAME_VERSIONS,
+                lambda: self.api.get_game_versions(),
+            )
+        )
+
+        game_versions = [GameVersion.from_json(g) for g in expected_json]
+        parsed_back = [g.to_json() for g in game_versions]
+
+        self.assertListEqual(expected_json, parsed_back)
+
+    def test_get_deprecated_licenses(self) -> None:
+        with redirect_stderr(None):
+            expected_json: list = json.loads(
+                cached_capture(
+                    ResponseFiles.GET_DEPRECATED_LICENSES,
+                    lambda: self.api.get_deprecated_licenses(),
+                )
+            )
+
+        licenses = [DeprecatedLicense.from_json(l) for l in expected_json]
+        parsed_back = [g.to_json() for g in licenses]
+
+        self.assertListEqual(expected_json, parsed_back)
+
+    def test_get_license(self) -> None:
+        expected_json: dict = json.loads(
+            cached_capture(
+                ResponseFiles.GET_LICENSE,
+                lambda: self.api.get_license_text("LGPL-3.0-only"),
+            )
+        )
+
+        license = LicenseText.from_json(expected_json)
+        parsed_back = license.to_json()
 
         self.assertDictEqual(expected_json, parsed_back)
 

@@ -1,0 +1,110 @@
+[
+    [
+        {
+            "role": "Member",
+            "team_id": "BZoBsPo6",
+            "user": {
+                "id": "iFMgB5Ib",
+                "username": "sfPlayer1",
+                "avatar_url": "https://avatars.githubusercontent.com/u/1939216?v=4",
+                "bio": null,
+                "created": "2021-01-22T11:56:24.005926Z",
+                "role": "developer",
+                "badges": 0,
+                "auth_providers": null,
+                "email": null,
+                "email_verified": null,
+                "has_password": null,
+                "has_totp": null,
+                "payout_data": null,
+                "stripe_customer_id": null,
+                "allow_friend_requests": null,
+                "github_id": null
+            },
+            "permissions": null,
+            "accepted": true,
+            "payouts_split": null,
+            "ordering": 0
+        },
+        {
+            "role": "Owner",
+            "team_id": "BZoBsPo6",
+            "user": {
+                "id": "JZA4dW8o",
+                "username": "modmuss50",
+                "avatar_url": "https://avatars2.githubusercontent.com/u/4324090?v=4",
+                "bio": null,
+                "created": "2020-12-08T21:41:49.550067Z",
+                "role": "developer",
+                "badges": 0,
+                "auth_providers": null,
+                "email": null,
+                "email_verified": null,
+                "has_password": null,
+                "has_totp": null,
+                "payout_data": null,
+                "stripe_customer_id": null,
+                "allow_friend_requests": null,
+                "github_id": null
+            },
+            "permissions": null,
+            "accepted": true,
+            "payouts_split": null,
+            "ordering": 0
+        }
+    ],
+    [
+        {
+            "role": "Member",
+            "team_id": "tn8Zu9Q7",
+            "user": {
+                "id": "iFMgB5Ib",
+                "username": "sfPlayer1",
+                "avatar_url": "https://avatars.githubusercontent.com/u/1939216?v=4",
+                "bio": null,
+                "created": "2021-01-22T11:56:24.005926Z",
+                "role": "developer",
+                "badges": 0,
+                "auth_providers": null,
+                "email": null,
+                "email_verified": null,
+                "has_password": null,
+                "has_totp": null,
+                "payout_data": null,
+                "stripe_customer_id": null,
+                "allow_friend_requests": null,
+                "github_id": null
+            },
+            "permissions": null,
+            "accepted": true,
+            "payouts_split": null,
+            "ordering": 0
+        },
+        {
+            "role": "Owner",
+            "team_id": "tn8Zu9Q7",
+            "user": {
+                "id": "JZA4dW8o",
+                "username": "modmuss50",
+                "avatar_url": "https://avatars2.githubusercontent.com/u/4324090?v=4",
+                "bio": null,
+                "created": "2020-12-08T21:41:49.550067Z",
+                "role": "developer",
+                "badges": 0,
+                "auth_providers": null,
+                "email": null,
+                "email_verified": null,
+                "has_password": null,
+                "has_totp": null,
+                "payout_data": null,
+                "stripe_customer_id": null,
+                "allow_friend_requests": null,
+                "github_id": null
+            },
+            "permissions": null,
+            "accepted": true,
+            "payouts_split": null,
+            "ordering": 0
+        }
+    ]
+]

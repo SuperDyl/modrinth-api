@@ -15,7 +15,7 @@ from modrinth.model import (
     DonationPlatform,
     ForgeUpdates,
     GameVersion,
-    License,
+    LicenseText,
     Loader,
     MessageTextBody,
     ModrinthStatistics,
@@ -164,7 +164,7 @@ class ModrinthApi2:
 
         return [SearchResult.from_json(s) for s in response.json()]
 
-    def get_project(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> Project:
+    def get_project(self, project_id: MODRINTH_TEMP_ID | MODRINTH_ID) -> Project:
         """
         Gets all data for a project.
 
@@ -185,7 +185,7 @@ class ModrinthApi2:
 
     def get_projects(
         self,
-        project_ids: Iterable[MODRINTH_ID | MODRINTH_TEMP_ID],
+        project_ids: Iterable[MODRINTH_TEMP_ID | MODRINTH_ID],
     ) -> list[Project]:
         """
         Gets all data for multiple projects
@@ -228,7 +228,7 @@ class ModrinthApi2:
 
         return [Project.from_json(p) for p in response.json()]
 
-    def is_project_id_valid(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> bool:
+    def is_project_id_valid(self, project_id: MODRINTH_TEMP_ID | MODRINTH_ID) -> bool:
         """
         Check if the project id or slug (temporary/friendly id) is valid and accessible.
 
@@ -261,7 +261,7 @@ class ModrinthApi2:
 
     def get_project_dependencies(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
     ) -> ProjectDependencies:
         """
         Gets data about all projects and versions that the specified project depends on.
@@ -284,7 +284,7 @@ class ModrinthApi2:
 
     def get_project_versions(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         *,
         loaders: Iterable[LOADER] | None = None,
         game_versions: Iterable[GAME_VERSION] | None = None,
@@ -343,7 +343,7 @@ class ModrinthApi2:
 
     def get_version_by_version_id(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         version_id: MODRINTH_ID,
     ) -> Version:
         """
@@ -370,7 +370,7 @@ class ModrinthApi2:
 
     def get_version_by_version_number(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         version_number: VERSION_NUMBER,
     ) -> Version:
         """
@@ -613,7 +613,7 @@ class ModrinthApi2:
             for hash, version in response.json().items()
         }
 
-    def get_user(self, user_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> User:
+    def get_user(self, user_id: MODRINTH_TEMP_ID | MODRINTH_ID) -> User:
         """
         Gets data for a specific user.
 
@@ -634,7 +634,7 @@ class ModrinthApi2:
         return User.from_json(response.json())
 
     def get_users(
-        self, user_ids: Iterable[MODRINTH_ID | MODRINTH_TEMP_ID]
+        self, user_ids: Iterable[MODRINTH_TEMP_ID | MODRINTH_ID]
     ) -> list[User]:
         """
         Gets data for a list of users.
@@ -657,14 +657,15 @@ class ModrinthApi2:
         return [User.from_json(u) for u in response.json()]
 
     def get_projects_by_user(
-        self, user_id: MODRINTH_ID | MODRINTH_TEMP_ID
+        self,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
     ) -> list[Project]:
         """
         Gets all projects owned by specific user.
 
         Documentation: https://docs.modrinth.com/api/operations/getuserprojects/
 
-        :param user_ids: The IDs and/or slugs of the users.
+        :param user_ids: The ID or slug of the user.
         :raises HTTPError: If the HTTP request to the Modrinth API fails.
         :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
         :raises KeyError: If the response body is missing a required field.
@@ -679,10 +680,11 @@ class ModrinthApi2:
         return [Project.from_json(p) for p in response.json()]
 
     def get_team_members_of_project(
-        self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID
+        self,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
     ) -> list[TeamMember]:
         """
-        Gets all projects owned by specific user.
+        Gets all team members who are part of a project.
 
         Documentation: https://docs.modrinth.com/api/operations/getprojectteammembers/
 
@@ -701,7 +703,8 @@ class ModrinthApi2:
         return [TeamMember.from_json(t) for t in response.json()]
 
     def get_team_members_teams(
-        self, team_ids: Iterable[MODRINTH_ID]
+        self,
+        team_ids: Iterable[MODRINTH_ID],
     ) -> list[list[TeamMember]]:
         """
         Gets all members of each team specified.
@@ -804,7 +807,7 @@ class ModrinthApi2:
 
         return [DeprecatedLicense.from_json(l) for l in response.json()]
 
-    def get_license(self, license_id: str) -> License:
+    def get_license_text(self, license_id: str) -> LicenseText:
         """
         Gets information connected to a license id.
 
@@ -821,7 +824,7 @@ class ModrinthApi2:
         )
         response.raise_for_status()
 
-        return License.from_json(response.json())
+        return LicenseText.from_json(response.json())
 
     def get_donation_platforms(self) -> list[DonationPlatform]:
         """
@@ -898,7 +901,7 @@ class ModrinthApi2:
 
     def get_forge_update(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
     ) -> list[ForgeUpdates]:
         """
         This is part of a system used by Forge to notify users when new mod updates are available.
@@ -973,7 +976,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     __get_headers = _get_headers
 
-    def delete_project(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+    def delete_project(self, project_id: MODRINTH_TEMP_ID | MODRINTH_ID) -> None:
         """
         Delete a project the user owns.
 
@@ -991,7 +994,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def modify_project(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         project_data: ProjectPatch,
     ) -> None:
         """
@@ -1013,7 +1016,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def modify_projects(
         self,
-        project_ids: Iterable[MODRINTH_ID | MODRINTH_TEMP_ID],
+        project_ids: Iterable[MODRINTH_TEMP_ID | MODRINTH_ID],
         shared_project_data: ProjectPatches,
     ) -> None:
         """
@@ -1068,7 +1071,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
         return Project.from_json(response.json())
 
-    def delete_project_icon(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+    def delete_project_icon(self, project_id: MODRINTH_TEMP_ID | MODRINTH_ID) -> None:
         """
         Deletes the icon for a project.
 
@@ -1086,7 +1089,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def change_project_icon(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         icon: IMAGE,
         file_type: IMAGE_FILE_EXTENSION,
     ) -> None:
@@ -1114,7 +1117,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def add_gallery_image(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         image: IMAGE | None,
         file_type: IMAGE_FILE_EXTENSION,
         featured: bool,
@@ -1168,7 +1171,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def delete_gallery_image(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         image_url: str,
     ) -> None:
         """
@@ -1189,7 +1192,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def modify_gallery_image_data(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         url: str,
         featured: bool | None = None,
         title: str | None = None,
@@ -1233,7 +1236,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         )
         response.raise_for_status()
 
-    def follow_project(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+    def follow_project(self, project_id: MODRINTH_TEMP_ID | MODRINTH_ID) -> None:
         """
         Makes the current user follow the specified project.
 
@@ -1249,7 +1252,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         )
         response.raise_for_status()
 
-    def unfollow_project(self, project_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+    def unfollow_project(self, project_id: MODRINTH_TEMP_ID | MODRINTH_ID) -> None:
         """
         Makes the current user unfollow the specified project.
 
@@ -1267,7 +1270,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def schedule_project(
         self,
-        project_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        project_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         time: datetime,
         requested_status: REQUESTED_PROJECT_STATUS,
     ) -> None:
@@ -1477,7 +1480,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def modify_user(
         self,
-        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         user_data: UserPatch,
     ) -> None:
         """
@@ -1516,7 +1519,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
         return PersonalUser.from_json(response.json())
 
-    def delete_user_avatar(self, user_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> None:
+    def delete_user_avatar(self, user_id: MODRINTH_TEMP_ID | MODRINTH_ID) -> None:
         """
         Gets data for your own user.
 
@@ -1534,7 +1537,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def change_user_avatar(
         self,
-        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         image: IMAGE,
         format: IMAGE_FILE_EXTENSION | None = None,
     ) -> None:
@@ -1561,7 +1564,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def get_followed_projects(
         self,
-        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
     ) -> list[Project]:
         """
         Gets data for your own user.
@@ -1584,7 +1587,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def get_payout_history(
         self,
-        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
     ) -> list[PayoutHistory]:
         """
         Gets payout history for your user.
@@ -1607,7 +1610,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def withdraw_payout_balance(
         self,
-        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         amount: int,
         *,
         i_understand_the_withdrawal_fees: Literal[True],
@@ -1636,7 +1639,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
 
     def get_all_notifications(
         self,
-        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
     ) -> list[Notification]:
         """
         Gets payout history for your user.
@@ -2036,7 +2039,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
     def remove_team_member(
         self,
         team_id: MODRINTH_ID,
-        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
     ) -> None:
         """
         Remove a user from the team.
@@ -2057,7 +2060,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
     def modify_team_member(
         self,
         team_id: MODRINTH_ID,
-        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
         role: str | None,
         permissions: Permissions | None,
         payouts_split: int | None,
@@ -2097,7 +2100,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
     def transfer_team_ownership(
         self,
         team_id: MODRINTH_ID,
-        user_id: MODRINTH_ID | MODRINTH_TEMP_ID,
+        user_id: MODRINTH_TEMP_ID | MODRINTH_ID,
     ) -> None:
         """
         Transfers ownership of the team to the other user.

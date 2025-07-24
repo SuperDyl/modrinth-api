@@ -1,0 +1,54 @@
+[
+    {
+        "role": "Original Author",
+        "team_id": "peSx5UYg",
+        "user": {
+            "id": "TEZXhE2U",
+            "username": "jellysquid3",
+            "avatar_url": "https://cdn.modrinth.com/user/TEZXhE2U/f4705a5f2388c65029ae2e59f1434b3e6e4de23a.png",
+            "bio": "Professional idiot at day, maniac programmer by night.",
+            "created": "2021-01-03T00:49:18.373336Z",
+            "role": "developer",
+            "badges": 0,
+            "auth_providers": null,
+            "email": null,
+            "email_verified": null,
+            "has_password": null,
+            "has_totp": null,
+            "payout_data": null,
+            "stripe_customer_id": null,
+            "allow_friend_requests": null,
+            "github_id": null
+        },
+        "permissions": null,
+        "accepted": true,
+        "payouts_split": null,
+        "ordering": 0
+    },
+    {
+        "role": "Project Lead",
+        "team_id": "peSx5UYg",
+        "user": {
+            "id": "uhPSqlnd",
+            "username": "2No2Name",
+            "avatar_url": "https://avatars.githubusercontent.com/u/50278648?v=4",
+            "bio": null,
+            "created": "2021-01-31T09:13:58.517719Z",
+            "role": "developer",
+            "badges": 0,
+            "auth_providers": null,
+            "email": null,
+            "email_verified": null,
+            "has_password": null,
+            "has_totp": null,
+            "payout_data": null,
+            "stripe_customer_id": null,
+            "allow_friend_requests": null,
+            "github_id": null
+        },
+        "permissions": null,
+        "accepted": true,
+        "payouts_split": null,
+        "ordering": 0
+    }
+]
