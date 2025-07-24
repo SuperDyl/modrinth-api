@@ -674,7 +674,7 @@ class User:
     name: str | None
     email: str | None
     bio: str
-    payout_date: Payout | None
+    payout_data: Payout | None
     id: str
     avatar_url: str
     created: datetime
@@ -692,15 +692,15 @@ class User:
         :param json_: The dictionary containing the same keys expected by `User`
         :raise KeyError: If any required values for `User` are not defined.
         """
-        payout_date_json: dict | None = json_.get("payout_date")
+        payout_data_json: dict | None = json_.get("payout_data")
 
         return User(
             username=json_["username"],
             name=json_.get("name"),
             email=json_.get("email"),
             bio=json_["bio"],
-            payout_date=(
-                None if payout_date_json is None else Payout.from_json(payout_date_json)
+            payout_data=(
+                None if payout_data_json is None else Payout.from_json(payout_data_json)
             ),
             id=json_["id"],
             avatar_url=json_["avatar_url"],
@@ -723,7 +723,7 @@ class User:
             "name": self.name,
             "email": self.email,
             "bio": self.bio,
-            "payout_date": self.payout_date,
+            "payout_data": self.payout_data,
             "id": self.id,
             "avatar_url": self.avatar_url,
             "created": self.created.strftime(DATE_FORMAT),
@@ -752,7 +752,7 @@ class PersonalUser:
     name: str | None
     email: str | None
     bio: str
-    payout_date: Payout | None
+    payout_data: Payout | None
     id: str
     avatar_url: str
     created: datetime
@@ -770,15 +770,15 @@ class PersonalUser:
         :param json_: The dictionary containing the same keys expected by `PersonalUser`
         :raise KeyError: If any required values for `PersonalUser` are not defined.
         """
-        payout_date_json: dict | None = json_.get("payout_date")
+        payout_data_json: dict | None = json_.get("payout_data")
 
         return PersonalUser(
             username=json_["username"],
             name=json_.get("name"),
             email=json_.get("email"),
             bio=json_["bio"],
-            payout_date=(
-                None if payout_date_json is None else Payout.from_json(payout_date_json)
+            payout_data=(
+                None if payout_data_json is None else Payout.from_json(payout_data_json)
             ),
             id=json_["id"],
             avatar_url=json_["avatar_url"],
@@ -801,7 +801,7 @@ class PersonalUser:
             "name": self.name,
             "email": self.email,
             "bio": self.bio,
-            "payout_date": self.payout_date,
+            "payout_data": self.payout_data,
             "id": self.id,
             "avatar_url": self.avatar_url,
             "created": self.created.strftime(DATE_FORMAT),
@@ -820,7 +820,7 @@ class PersonalUser:
             name=self.name,
             email=self.email,
             bio=self.bio,
-            payout_date=self.payout_date,
+            payout_data=self.payout_data,
             id=self.id,
             avatar_url=self.avatar_url,
             created=self.created,
@@ -850,24 +850,24 @@ class UserPatch:
     name: str | None | Empty
     email: str | None | Empty
     bio: str | None | Empty
-    payout_date: PayoutPatch | Empty
+    payout_data: PayoutPatch | Empty
 
     @classmethod
     def from_json(cls, json_: dict) -> "UserPatch":
         """
         :param json_: The dictionary containing the same keys expected by `UserPatch`
         """
-        payout_date_json: dict | Empty = json_.get("payout_date", EMPTY)
+        payout_data_json: dict | Empty = json_.get("payout_data", EMPTY)
 
         return UserPatch(
             username=json_.get("username", EMPTY),
             name=json_.get("name", EMPTY),
             email=json_.get("email", EMPTY),
             bio=json_.get("bio", EMPTY),
-            payout_date=(
-                payout_date_json
-                if isinstance(payout_date_json, Empty)
-                else PayoutPatch.from_json(payout_date_json)
+            payout_data=(
+                payout_data_json
+                if isinstance(payout_data_json, Empty)
+                else PayoutPatch.from_json(payout_data_json)
             ),
         )
 
@@ -885,8 +885,8 @@ class UserPatch:
             output["email"] = self.email
         if not isinstance(self.bio, Empty):
             output["bio"] = self.bio
-        if not isinstance(self.payout_date, Empty):
-            output["payout_date"] = self.payout_date
+        if not isinstance(self.payout_data, Empty):
+            output["payout_data"] = self.payout_data
 
         return output
 

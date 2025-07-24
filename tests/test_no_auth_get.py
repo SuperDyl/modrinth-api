@@ -7,7 +7,7 @@ from requests import Response
 
 from responses import cached_capture, ResponseFiles
 from modrinth import ModrinthApi2
-from modrinth.model import Project, ProjectDependencies, Version
+from modrinth.model import Project, ProjectDependencies, User, Version
 from modrinth.types import MODRINTH_ID, SHA1_HASH, SHA512_HASH
 
 LITHIUM_PROJECT_ID: MODRINTH_ID = "gvQqBUqZ"
@@ -299,6 +299,19 @@ class TestGetMethods(unittest.TestCase):
 
         versions = {h: Version.from_json(v) for h, v in expected_json.items()}
         parsed_back = {h: v.to_json() for h, v in versions.items()}
+
+        self.assertDictEqual(expected_json, parsed_back)
+
+    def test_get_user(self) -> None:
+        expected_json: dict = json.loads(
+            cached_capture(
+                ResponseFiles.GET_USER,
+                lambda: self.api.get_user("superdyl"),
+            )
+        )
+
+        user = User.from_json(expected_json)
+        parsed_back = user.to_json()
 
         self.assertDictEqual(expected_json, parsed_back)
 

@@ -33,6 +33,7 @@ class ResponseFiles(StrEnum):
     GET_LATEST_VERSION = "get-latest-version.json"
     GET_VERSIONS_FROM_HASHES_SHA1 = "get-versions-from-hashes-sha1.json"
     GET_LATEST_VERSIONS = "get-latest-versions.json"
+    GET_USER = "get-user.json"
 
 
 used_files: set[ResponseFiles] = set()
