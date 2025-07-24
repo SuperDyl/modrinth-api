@@ -1,0 +1,44 @@
+{
+    "522f1eac7dedabace578fc61ae1ce9290c07ca3a": {
+        "game_versions": [
+            "1.21",
+            "1.21.1",
+            "1.21.2",
+            "1.21.3",
+            "1.21.4",
+            "1.21.5",
+            "1.21.6",
+            "1.21.7"
+        ],
+        "loaders": [
+            "datapack"
+        ],
+        "id": "oaj6YGgc",
+        "project_id": "8ZiCD9vV",
+        "author_id": "iA8ISxSN",
+        "featured": true,
+        "name": "tag-game-v1.2.4",
+        "version_number": "v1.2.4",
+        "changelog": "Update pack format number for 1.21.7",
+        "changelog_url": null,
+        "date_published": "2025-07-05T17:48:25.210584Z",
+        "downloads": 18,
+        "version_type": "release",
+        "status": "listed",
+        "requested_status": null,
+        "files": [
+            {
+                "hashes": {
+                    "sha1": "4fdc84c4452a93f6c50b806f1462fdec776c5efe",
+                    "sha512": "c1cac9994ecf974541dfc4f3f3c6cd4623de0462b01b4cc5c5ed3f88098949f692c1356972c863f6d2e53f06e9fa73617eda94e9a8130a5512ac418a9145d236"
+                },
+                "url": "https://cdn.modrinth.com/data/8ZiCD9vV/versions/oaj6YGgc/tag-game-v1.2.4.zip",
+                "filename": "tag-game-v1.2.4.zip",
+                "primary": true,
+                "size": 59875,
+                "file_type": null
+            }
+        ],
+        "dependencies": []
+    }
+}

@@ -24,12 +24,26 @@ class ResponseFiles(StrEnum):
     GET_VERSION_BY_NUMBER_LITHIUM = "get-version-by-number-lithium.json"
     GET_VERSIONS = "get-versions.json"
     GET_VERSION_FROM_HASH_SHA1 = "get-version-from-hash-sha1.json"
-    GET_VERSIONS_FROM_HASH_SINGULAR_SHA512 = "get-versions-from-hash-singular-sha512.json"
-    GET_VERSIONS_FROM_HASH_MULTIPLE_SHA512 = "get-versions-from-hash-multiple-sha512.json"
+    GET_VERSIONS_FROM_HASH_SINGULAR_SHA512 = (
+        "get-versions-from-hash-singular-sha512.json"
+    )
+    GET_VERSIONS_FROM_HASH_MULTIPLE_SHA512 = (
+        "get-versions-from-hash-multiple-sha512.json"
+    )
+    GET_LATEST_VERSION = "get-latest-version.json"
+    GET_VERSIONS_FROM_HASHES_SHA1 = "get-versions-from-hashes-sha1.json"
+    GET_LATEST_VERSIONS = "get-latest-versions.json"
+
+
+used_files: set[ResponseFiles] = set()
 
 
 @cache
 def get_response(response_file: ResponseFiles) -> str:
+
+    if response_file in used_files:
+        raise ValueError(f"Reused response file '{response_file}'")
+    used_files.add(response_file)
 
     with open(f"{RESPONSE_DIR}/{response_file}", "r") as file:
         return file.read()

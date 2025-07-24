@@ -519,7 +519,7 @@ class ModrinthApi2:
 
         :param loaders: The types of loaders to filter for (i.e. ["fabric"]).
         :param game_versions: The game versions to filter for (i.e. ["1.18.1"]).
-        :param file_hash: The hash of the file (not base64 encoded).
+        :param file_hash: The hash of the file encoded as hexadecimal.
         :param algorithm: The hashing algorithm used for the hash.
         :raises HTTPError: If the HTTP request to the Modrinth API fails.
         :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
@@ -529,17 +529,14 @@ class ModrinthApi2:
         if algorithm == "auto":
             algorithm = "sha512" if len(file_hash) == 128 else "sha1"
 
-        query_parameters: dict[str, Any] = {
-            "loaders": json.dumps(tuple(loaders)),
-            "game_versions": json.dumps(tuple(game_versions)),
-        }
-        if algorithm is not None:
-            query_parameters["algorithm"] = algorithm
-
-        response = requests.get(
+        response = requests.post(
             f"{self.api_url}/version_file/{file_hash}/update",
             headers=self.__get_headers(),
-            params=query_parameters,
+            params={"algorithm": algorithm},
+            json={
+                "loaders": loaders,
+                "game_versions": game_versions,
+            },
         )
         response.raise_for_status()
 
@@ -557,7 +554,7 @@ class ModrinthApi2:
 
         Documentation: https://docs.modrinth.com/api/operations/versionsfromhashes/
 
-        :param file_hashes: The hash of the file.
+        :param file_hashes: The hashes of the files.
         :param algorithm: The hashing algorithm used for all the hashes.
         :raises HTTPError: If the HTTP request to the Modrinth API fails.
         :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
@@ -565,11 +562,11 @@ class ModrinthApi2:
         :returns: A mapping of each file_hash to its Version.
         """
 
-        response = requests.get(
+        response = requests.post(
             f"{self.api_url}/version_files",
             headers=self.__get_headers(),
-            params={
-                "hashes": json.dumps(tuple(file_hashes)),
+            json={
+                "hashes": file_hashes,
                 "algorithm": algorithm,
             },
         )
@@ -591,29 +588,30 @@ class ModrinthApi2:
 
         :param loaders: The types of loaders to filter for (i.e. ["fabric"]).
         :param game_versions: The game versions to filter for (i.e. ["1.18.1"]).
-        :param file_hashes: The hash of the file (not base64 encoded).
-        :param algorithm: The hashing algorithm used for the hash.
+        :param file_hashes: The hashes of the files encoded as hexadecimal.
+        :param algorithm: The hashing algorithm used for the hashes.
         :raises HTTPError: If the HTTP request to the Modrinth API fails.
         :raises requests.exceptions.JSONDecodeError: If the response body does not contain valid json.
         :raises KeyError: If the response body is missing a required field.
-        :returns: A mapping of each file_hash to its Version.
+        :returns: A mapping of each file_hash to its `Version`.
         """
 
-        query_parameters: dict[str, Any] = {
-            "loaders": json.dumps(tuple(loaders)),
-            "game_versions": json.dumps(tuple(game_versions)),
-            "hashes": json.dumps(tuple(file_hashes)),
-            "algorithm": algorithm,
-        }
-
-        response = requests.get(
+        response = requests.post(
             f"{self.api_url}/version_files/update",
             headers=self.__get_headers(),
-            params=query_parameters,
+            json={
+                "loaders": loaders,
+                "game_versions": game_versions,
+                "hashes": file_hashes,
+                "algorithm": algorithm,
+            },
         )
         response.raise_for_status()
 
-        return {hash: Version.from_json(version) for hash, version in response.json()}
+        return {
+            hash: Version.from_json(version)
+            for hash, version in response.json().items()
+        }
 
     def get_user(self, user_id: MODRINTH_ID | MODRINTH_TEMP_ID) -> User:
         """
@@ -1009,7 +1007,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.patch(
             f"{self.api_url}/project/{project_id}",
             headers=self.__get_headers(),
-            data=project_data.to_json(),
+            json=project_data.to_json(),
         )
         response.raise_for_status()
 
@@ -1032,7 +1030,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
             f"{self.api_url}/project",
             headers=self.__get_headers(),
             params={"ids": json.dumps(project_ids)},
-            data=shared_project_data.to_json(),
+            json=shared_project_data.to_json(),
         )
         response.raise_for_status()
 
@@ -1064,7 +1062,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.post(
             f"{self.api_url}/project",
             headers=headers,
-            data=multipart_encoder,
+            json=multipart_encoder,
         )
         response.raise_for_status()
 
@@ -1110,7 +1108,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
             f"{self.api_url}/project/{project_id}/icon",
             headers=headers,
             params={"ext": file_type},
-            data=icon,
+            json=icon,
         )
         response.raise_for_status()
 
@@ -1162,7 +1160,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
             f"{self.api_url}/project/{project_id}/gallery",
             headers=headers,
             params=params,
-            data=image,
+            json=image,
         )
         response.raise_for_status()
 
@@ -1287,7 +1285,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.post(
             f"{self.api_url}/project/{project_id}/schedule",
             headers=self.__get_headers(),
-            data={
+            json={
                 "time": time.strftime(DATE_FORMAT),
                 "requested_status": requested_status,
             },
@@ -1328,7 +1326,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.patch(
             f"{self.api_url}/version/{version_id}",
             headers=self.__get_headers(),
-            data=version_data.to_json(),
+            json=version_data.to_json(),
         )
         response.raise_for_status()
 
@@ -1368,7 +1366,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.post(
             f"{self.api_url}/version",
             headers=headers,
-            data=multipart_encoder,
+            json=multipart_encoder,
         )
         response.raise_for_status()
 
@@ -1394,7 +1392,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.post(
             f"{self.api_url}/version/{version_id}/schedule",
             headers=self.__get_headers(),
-            data={
+            json={
                 "time": time.strftime(DATE_FORMAT),
                 "requested_status": requested_status,
             },
@@ -1435,7 +1433,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.post(
             f"{self.api_url}/version/{version_id}",
             headers=headers,
-            data=multipart_encoder,
+            json=multipart_encoder,
         )
         response.raise_for_status()
 
@@ -1495,7 +1493,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.patch(
             f"{self.api_url}/user/{user_id}",
             headers=self.__get_headers(),
-            data=user_data.to_json(),
+            json=user_data.to_json(),
         )
         response.raise_for_status()
 
@@ -1557,7 +1555,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.patch(
             f"{self.api_url}/user/{user_id}/icon",
             headers=headers,
-            data=image,
+            json=image,
         )
         response.raise_for_status()
 
@@ -1876,7 +1874,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.patch(
             f"{self.api_url}/report/{report_id}",
             headers=self.__get_headers(),
-            data=data,
+            json=data,
         )
         response.raise_for_status()
 
@@ -1940,7 +1938,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.post(
             f"{self.api_url}/thread/{thread_id}",
             headers=self.__get_headers(),
-            data=message.to_json(),
+            json=message.to_json(),
         )
         response.raise_for_status()
 
@@ -1961,7 +1959,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.get(
             f"{self.api_url}/threads",
             headers=self.__get_headers(),
-            data={"ids": json.dumps(tuple(thread_ids))},
+            json={"ids": json.dumps(tuple(thread_ids))},
         )
         response.raise_for_status()
 
@@ -2015,7 +2013,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.post(
             f"{self.api_url}/team/{team_id}/members",
             headers=self.__get_headers(),
-            data={"user_id": user_id},
+            json={"user_id": user_id},
         )
         response.raise_for_status()
 
@@ -2092,7 +2090,7 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.patch(
             f"{self.api_url}/team/{team_id}/members/{user_id}",
             headers=self.__get_headers(),
-            data=data,
+            json=data,
         )
         response.raise_for_status()
 
@@ -2114,6 +2112,6 @@ class ModrinthAuthenticatedApi2(ModrinthApi2):
         response = requests.patch(
             f"{self.api_url}/team/{team_id}/owner",
             headers=self.__get_headers(),
-            data={"user_id": user_id},
+            json={"user_id": user_id},
         )
         response.raise_for_status()

@@ -8,7 +8,7 @@ from requests import Response
 from responses import cached_capture, ResponseFiles
 from modrinth import ModrinthApi2
 from modrinth.model import Project, ProjectDependencies, Version
-from modrinth.types import MODRINTH_ID
+from modrinth.types import MODRINTH_ID, SHA1_HASH, SHA512_HASH
 
 LITHIUM_PROJECT_ID: MODRINTH_ID = "gvQqBUqZ"
 TAG_GAME_PROJECT_ID: MODRINTH_ID = "8ZiCD9vV"
@@ -17,8 +17,15 @@ LEDGER_PROJECT_ID: MODRINTH_ID = "LVN9ygNV"
 LITHIUM_VERSION_ID: MODRINTH_ID = "EhG1mQzx"
 TAG_GAME_VERSION_ID: MODRINTH_ID = "yPKyu5Cc"
 
+TAG_GAME_SHA1: SHA1_HASH = "522f1eac7dedabace578fc61ae1ce9290c07ca3a"
+LITHIUM_SHA1: SHA1_HASH = "6ab1c5adc97ab0c66f9c9afcdb1d143a607db82c"
+TAG_GAME_SHA512: SHA512_HASH = (
+    "d33a3877707720fa466a0dfc4c774904b2a4e73a6d30a718ce4448b2a75b176d6ac24fdec353f5adfb3fa4551d93a38994300d5261778baaa5f1efbe045af42b"
+)
+
 
 class TestGetMethods(unittest.TestCase):
+    api: ModrinthApi2
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -145,7 +152,7 @@ class TestGetMethods(unittest.TestCase):
         expected_json: dict = json.loads(
             cached_capture(
                 ResponseFiles.GET_VERSION_LITHIUM,
-                lambda: self.api.get_version(),
+                lambda: self.api.get_version(LITHIUM_VERSION_ID),
             )
         )
 
@@ -191,10 +198,7 @@ class TestGetMethods(unittest.TestCase):
             cached_capture(
                 ResponseFiles.GET_VERSIONS,
                 lambda: self.api.get_versions(
-                    [
-                        LITHIUM_VERSION_ID,
-                        TAG_GAME_VERSION_ID,
-                    ]
+                    [LITHIUM_VERSION_ID, TAG_GAME_VERSION_ID]
                 ),
             )
         )
@@ -208,10 +212,7 @@ class TestGetMethods(unittest.TestCase):
         expected_json: dict = json.loads(
             cached_capture(
                 ResponseFiles.GET_VERSION_FROM_HASH_SHA1,
-                lambda: self.api.get_version_from_hash(
-                    "522f1eac7dedabace578fc61ae1ce9290c07ca3a",
-                    None,
-                ),
+                lambda: self.api.get_version_from_hash(TAG_GAME_SHA1, None),
             )
         )
 
@@ -224,10 +225,7 @@ class TestGetMethods(unittest.TestCase):
         expected_json: dict = json.loads(
             cached_capture(
                 ResponseFiles.GET_VERSIONS_FROM_HASH_SINGULAR_SHA512,
-                lambda: self.api.get_versions_from_hash(
-                    "d33a3877707720fa466a0dfc4c774904b2a4e73a6d30a718ce4448b2a75b176d6ac24fdec353f5adfb3fa4551d93a38994300d5261778baaa5f1efbe045af42b",
-                    None,
-                ),
+                lambda: self.api.get_versions_from_hash(TAG_GAME_SHA512, None),
             )
         )
 
@@ -252,6 +250,57 @@ class TestGetMethods(unittest.TestCase):
     #     parsed_back = [v.to_json() for v in versions]
 
     #     self.assertListEqual(expected_json, parsed_back)
+
+    def test_get_latest_version_from_hash_sha512(self) -> None:
+        expected_json: dict = json.loads(
+            cached_capture(
+                ResponseFiles.GET_LATEST_VERSION,
+                lambda: self.api.get_latest_version_from_hash(
+                    loaders=["datapack"],
+                    game_versions=["1.21.6"],
+                    file_hash=TAG_GAME_SHA512,
+                ),
+            )
+        )
+
+        version = Version.from_json(expected_json)
+        parsed_back = version.to_json()
+
+        self.assertDictEqual(expected_json, parsed_back)
+
+    def test_get_versions_from_hashes_sha1(self) -> None:
+        expected_json: dict = json.loads(
+            cached_capture(
+                ResponseFiles.GET_VERSIONS_FROM_HASHES_SHA1,
+                lambda: self.api.get_versions_from_hashes(
+                    file_hashes=[LITHIUM_SHA1, TAG_GAME_SHA1],
+                    algorithm="sha1",
+                ),
+            )
+        )
+
+        versions = {h: Version.from_json(v) for h, v in expected_json.items()}
+        parsed_back = {h: v.to_json() for h, v in versions.items()}
+
+        self.assertDictEqual(expected_json, parsed_back)
+
+    def test_get_latest_versions_from_hashes_sha1(self) -> None:
+        expected_json: dict = json.loads(
+            cached_capture(
+                ResponseFiles.GET_LATEST_VERSIONS,
+                lambda: self.api.get_latest_versions_from_hashes(
+                    loaders=["datapack"],
+                    game_versions=["1.21.6"],
+                    file_hashes=[LITHIUM_SHA1, TAG_GAME_SHA1],
+                    algorithm="sha1",
+                ),
+            )
+        )
+
+        versions = {h: Version.from_json(v) for h, v in expected_json.items()}
+        parsed_back = {h: v.to_json() for h, v in versions.items()}
+
+        self.assertDictEqual(expected_json, parsed_back)
 
 
 if __name__ == "__main__":
